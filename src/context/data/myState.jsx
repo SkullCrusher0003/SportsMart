@@ -20,12 +20,14 @@ function MyState(props) {
     }
   }
 
-    const [products, setProducts] = useState({
+  const [products, setProducts] = useState({
     title: "",
     price: "",
     imageUrl: "",
     category: "",
     description: "",
+    quantity: "",
+    moq: "", // Minimum Order Quantity (for wholesale)
     time: Timestamp.now(),
     date: new Date().toLocaleString(
       "en-US",
@@ -35,7 +37,6 @@ function MyState(props) {
         year: "numeric",
       }
     )
-
   })
 
   // ********************** Add Product Section  **********************
@@ -43,36 +44,51 @@ function MyState(props) {
     if (products.title == null || products.price == null || products.imageUrl == null || products.category == null || products.description == null) {
       return toast.error('Please fill all fields')
     }
+    
     const productRef = collection(fireDB, "products")
     setLoading(true)
     try {
       await addDoc(productRef, products)
-      toast.success("Product Add successfully")
-      setTimeout (() => {
-        window.location.href = '/dashboard'
+      toast.success("Product added successfully")
+      
+      // Check if user is wholesaler or admin and redirect accordingly
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userEmail = user?.user?.email;
+      
+      setTimeout(() => {
+        if (userEmail === 'arnavgupta5107@gmail.com') {
+          window.location.href = '/wholesaler-dashboard'
+        } else {
+          window.location.href = '/dashboard'
+        }
       }, 800);
+      
       getProductData()
-      closeModal()
       setLoading(false)
     } catch (error) {
       console.log(error)
       setLoading(false)
+      toast.error("Failed to add product")
     }
+    
+    // Reset form
     setProducts({
-        title: "",
-        price: "",
-        imageUrl: "",
-        category: "",
-        description: "",
-        time: Timestamp.now(),
-        date: new Date().toLocaleString(
+      title: "",
+      price: "",
+      imageUrl: "",
+      category: "",
+      description: "",
+      quantity: "",
+      moq: "",
+      time: Timestamp.now(),
+      date: new Date().toLocaleString(
         "en-US",
         {
-            month: "short",
-            day: "2-digit",
-            year: "numeric",
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
         }
-        )
+      )
     })
   }
 
@@ -102,40 +118,48 @@ function MyState(props) {
     }
   }
 
-
   const edithandle = (item) => {
     setProducts(item)
   }
+  
   // update product
   const updateProduct = async (item) => {
     setLoading(true)
     try {
       await setDoc(doc(fireDB, "products", products.id), products);
-      toast.success("Product Updated successfully")
+      toast.success("Product updated successfully")
       getProductData();
       setLoading(false)
-      window.location.href = '/dashboard'
+      
+      // Check if user is wholesaler or admin and redirect accordingly
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userEmail = user?.user?.email;
+      
+      if (userEmail === 'arnavgupta5107@gmail.com') {
+        window.location.href = '/wholesaler-dashboard'
+      } else {
+        window.location.href = '/dashboard'
+      }
     } catch (error) {
       setLoading(false)
       console.log(error)
+      toast.error("Failed to update product")
     }
     setProducts("")
   }
 
   const deleteProduct = async (item) => {
-
     try {
       setLoading(true)
       await deleteDoc(doc(fireDB, "products", item.id));
-      toast.success('Product Deleted successfully')
+      toast.success('Product deleted successfully')
       setLoading(false)
       getProductData()
     } catch (error) {
-      // toast.success('Product Deleted Falied')
+      toast.error('Product deletion failed')
       setLoading(false)
     }
   }
-
 
   const [order, setOrder] = useState([]);
 
@@ -149,14 +173,12 @@ function MyState(props) {
         setLoading(false)
       });
       setOrder(ordersArray);
-      // console.log(ordersArray)
       setLoading(false);
     } catch (error) {
       console.log(error)
       setLoading(false)
     }
   }
-
 
   const [user, setUser] = useState([]);
 
@@ -187,7 +209,6 @@ function MyState(props) {
   const [searchkey, setSearchkey] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterPrice, setFilterPrice] = useState('')
-
 
   return (
     <MyContext.Provider value={{
