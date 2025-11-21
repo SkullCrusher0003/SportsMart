@@ -46,16 +46,21 @@ function App() {
           <Route path="/allproducts" element={<AllProducts />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          
+          {/* Updated: Allow both Admin and Wholesaler to add products */}
           <Route path="/addproduct" element={
-            <ProtectedRoutesForAdmin>
+            <ProtectedRoutesForAdminAndWholesaler>
               <AddProduct />
-            </ProtectedRoutesForAdmin>
+            </ProtectedRoutesForAdminAndWholesaler>
           } />
+          
+          {/* Updated: Allow both Admin and Wholesaler to update products */}
           <Route path="/updateproduct" element={
-            <ProtectedRoutesForAdmin>
+            <ProtectedRoutesForAdminAndWholesaler>
               <UpdateProduct />
-            </ProtectedRoutesForAdmin>
+            </ProtectedRoutesForAdminAndWholesaler>
           } />
+          
           <Route path="/*" element={<NoPage />} />
         </Routes>
         <ToastContainer />
@@ -89,8 +94,7 @@ export const ProtectedRoutes = ({ children }) => {
 // Protected route for admin
 export const ProtectedRoutesForAdmin = ({ children }) => {
   const admin = getUserFromStorage('user');
-  console.log(admin)
-  if (admin?.user?.email == 'testretailer@gmail.com') {
+  if (admin?.user?.email === 'testretailer@gmail.com') {
     return children;
   }
   return <Navigate to='/login' />;
@@ -100,6 +104,18 @@ export const ProtectedRoutesForAdmin = ({ children }) => {
 export const ProtectedRoutesForWholesaler = ({ children }) => {
   const wholesaler = getUserFromStorage('user');
   if (wholesaler?.user?.email === 'arnavgupta5107@gmail.com') {
+    return children;
+  }
+  return <Navigate to='/login' />;
+}
+
+// NEW: Protected route for both Admin and Wholesaler
+export const ProtectedRoutesForAdminAndWholesaler = ({ children }) => {
+  const user = getUserFromStorage('user');
+  const userEmail = user?.user?.email;
+  
+  // Allow both admin and wholesaler emails
+  if (userEmail === 'testretailer@gmail.com' || userEmail === 'arnavgupta5107@gmail.com') {
     return children;
   }
   return <Navigate to='/login' />;
