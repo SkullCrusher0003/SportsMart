@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 import Home from "./pages/home/Home";
 import MyState from "./context/data/myState";
+import LocationProvider from "./context/location/LocationContext";
 import Order from "./pages/order/Order";
 import NoPage from "./pages/nopage/NoPage";
 import Cart from "./pages/cart/Cart";
@@ -19,52 +20,62 @@ import 'react-toastify/dist/ReactToastify.css';
 import AddProduct from "./pages/admin/pages/AddProduct";
 import UpdateProduct from "./pages/admin/pages/UpdateProduct";
 import AllProducts from "./pages/allproducts/AllProducts";
+import ShopListing from "./components/shop/ShopListing";
+import OrderTracking from "./components/order/OrderTracking";
 
 function App() {
   return (
     <MyState>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/order" element={
-            <ProtectedRoutes>
-              <Order />
-            </ProtectedRoutes>
-          } />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoutesForAdmin>
-              <Dashboard />
-            </ProtectedRoutesForAdmin>
-          } />
-          <Route path="/wholesaler-dashboard" element={
-            <ProtectedRoutesForWholesaler>
-              <WholesalerDashboard />
-            </ProtectedRoutesForWholesaler>
-          } />
-          <Route path="/productinfo/:id" element={<ProductInfo />} />
-          <Route path="/allproducts" element={<AllProducts />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          {/* Updated: Allow both Admin and Wholesaler to add products */}
-          <Route path="/addproduct" element={
-            <ProtectedRoutesForAdminAndWholesaler>
-              <AddProduct />
-            </ProtectedRoutesForAdminAndWholesaler>
-          } />
-          
-          {/* Updated: Allow both Admin and Wholesaler to update products */}
-          <Route path="/updateproduct" element={
-            <ProtectedRoutesForAdminAndWholesaler>
-              <UpdateProduct />
-            </ProtectedRoutesForAdminAndWholesaler>
-          } />
-          
-          <Route path="/*" element={<NoPage />} />
-        </Routes>
-        <ToastContainer />
-      </Router>
+      <LocationProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/order" element={
+              <ProtectedRoutes>
+                <Order />
+              </ProtectedRoutes>
+            } />
+            <Route path="/order-tracking/:orderId" element={
+              <ProtectedRoutes>
+                <OrderTracking />
+              </ProtectedRoutes>
+            } />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/shops" element={<ShopListing />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoutesForAdmin>
+                <Dashboard />
+              </ProtectedRoutesForAdmin>
+            } />
+            <Route path="/wholesaler-dashboard" element={
+              <ProtectedRoutesForWholesaler>
+                <WholesalerDashboard />
+              </ProtectedRoutesForWholesaler>
+            } />
+            <Route path="/productinfo/:id" element={<ProductInfo />} />
+            <Route path="/allproducts" element={<AllProducts />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            
+            {/* Updated: Allow both Admin and Wholesaler to add products */}
+            <Route path="/addproduct" element={
+              <ProtectedRoutesForAdminAndWholesaler>
+                <AddProduct />
+              </ProtectedRoutesForAdminAndWholesaler>
+            } />
+            
+            {/* Updated: Allow both Admin and Wholesaler to update products */}
+            <Route path="/updateproduct" element={
+              <ProtectedRoutesForAdminAndWholesaler>
+                <UpdateProduct />
+              </ProtectedRoutesForAdminAndWholesaler>
+            } />
+            
+            <Route path="/*" element={<NoPage />} />
+          </Routes>
+          <ToastContainer />
+        </Router>
+      </LocationProvider>
     </MyState>
   )
 }
