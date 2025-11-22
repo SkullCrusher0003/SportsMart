@@ -11,7 +11,6 @@ function WholesalerTab() {
     const context = useContext(myContext)
     const { mode, product, edithandle, deleteProduct, order, user } = context
     let [isOpen, setIsOpen] = useState(false);
-    console.log(order)
 
     function closeModal() {
         setIsOpen(false)
@@ -83,13 +82,14 @@ function WholesalerTab() {
                                                 <th scope="col" className="px-6 py-3">Wholesale Price</th>
                                                 <th scope="col" className="px-6 py-3">MOQ</th>
                                                 <th scope="col" className="px-6 py-3">Category</th>
+                                                <th scope="col" className="px-6 py-3">Location</th>
                                                 <th scope="col" className="px-6 py-3">Date</th>
                                                 <th scope="col" className="px-6 py-3">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {product.map((item, index) => {
-                                                const { title, price, imageUrl, category, date } = item;
+                                                const { title, price, imageUrl, category, date, location } = item;
                                                 return (
                                                     <tr key={index} className="bg-gray-50 border-b dark:border-gray-700" 
                                                         style={{ backgroundColor: mode === 'dark' ? 'rgb(46 49 55)' : '', color: mode === 'dark' ? 'white' : '' }}>
@@ -110,6 +110,25 @@ function WholesalerTab() {
                                                         </td>
                                                         <td className="px-6 py-4 text-black" style={{ color: mode === 'dark' ? 'white' : '' }}>
                                                             {category}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-black max-w-[200px]" style={{ color: mode === 'dark' ? 'white' : '' }}>
+                                                            {location ? (
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs truncate" title={location.address}>
+                                                                        📍 {location.address}
+                                                                    </span>
+                                                                    <a 
+                                                                        href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-blue-500 text-xs hover:underline mt-1"
+                                                                    >
+                                                                        View on Map
+                                                                    </a>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-gray-400 text-xs">Not set</span>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 text-black" style={{ color: mode === 'dark' ? 'white' : '' }}>
                                                             {date}
@@ -237,12 +256,13 @@ function WholesalerTab() {
                                             <th scope="col" className="px-6 py-3">Name</th>
                                             <th scope="col" className="px-6 py-3">Email</th>
                                             <th scope="col" className="px-6 py-3">Uid</th>
+                                            <th scope="col" className="px-6 py-3">Location</th>
                                             <th scope="col" className="px-6 py-3">Registration Date</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {user.map((item, index) => {
-                                            const { name, uid, email, date } = item;
+                                            const { name, uid, email, date, location } = item;
                                             return (
                                                 <tr key={index} className="bg-gray-50 border-b dark:border-gray-700" 
                                                     style={{ backgroundColor: mode === 'dark' ? 'rgb(46 49 55)' : '', color: mode === 'dark' ? 'white' : '' }}>
@@ -257,6 +277,25 @@ function WholesalerTab() {
                                                     </td>
                                                     <td className="px-6 py-4 text-black" style={{ color: mode === 'dark' ? 'white' : '' }}>
                                                         {uid}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-black max-w-[200px]" style={{ color: mode === 'dark' ? 'white' : '' }}>
+                                                        {location ? (
+                                                            <div className="flex flex-col">
+                                                                <span className="text-xs truncate" title={location.address}>
+                                                                    📍 {location.address}
+                                                                </span>
+                                                                <a 
+                                                                    href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-blue-500 text-xs hover:underline mt-1"
+                                                                >
+                                                                    View on Map
+                                                                </a>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-gray-400 text-xs">Not set</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 text-black" style={{ color: mode === 'dark' ? 'white' : '' }}>
                                                         {date}
