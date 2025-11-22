@@ -14,7 +14,7 @@ function Signup() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [phone, setPhone] = useState("");
-    const [userType, setUserType] = useState("customer"); // customer, wholesaler, retailer
+    const [userType, setUserType] = useState("customer");
     const [location, setLocation] = useState(null);
     const [showLocationPicker, setShowLocationPicker] = useState(false);
 
@@ -57,7 +57,12 @@ function Signup() {
                     lng: location.lng,
                     address: location.address
                 },
-                time: Timestamp.now()
+                time: Timestamp.now(),
+                date: new Date().toLocaleString("en-US", {
+                    month: "short",
+                    day: "2-digit",
+                    year: "numeric",
+                })
             };
             
             const userRef = collection(fireDB, "users");
@@ -70,13 +75,24 @@ function Signup() {
             setPassword("");
             setPhone("");
             setLocation(null);
+            setUserType("customer");
             setLoading(false);
             
             navigate('/login');
             
         } catch (error) {
             console.log(error);
-            toast.error(error.message);
+            
+            let errorMessage = error.message;
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'This email is already registered';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'Password should be at least 6 characters';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address';
+            }
+            
+            toast.error(errorMessage);
             setLoading(false);
         }
     };
@@ -84,7 +100,7 @@ function Signup() {
     return (
         <div className='flex justify-center items-center min-h-screen py-8'>
             {loading && <Loader/>}
-            <div className='bg-gray-800 px-10 py-10 rounded-xl w-full max-w-2xl'>
+            <div className='bg-gray-800 px-10 py-10 rounded-xl w-full max-w-md mx-4'>
                 <div className="">
                     <h1 className='text-center text-white text-xl mb-4 font-bold'>Signup</h1>
                 </div>
@@ -133,6 +149,7 @@ function Signup() {
                 </div>
 
                 <div>
+                    <label className="text-gray-300 text-sm mb-1 block">Account Type</label>
                     <select
                         value={userType}
                         onChange={(e) => setUserType(e.target.value)}
@@ -142,6 +159,18 @@ function Signup() {
                         <option value="wholesaler">Wholesaler</option>
                         <option value="retailer">Retailer</option>
                     </select>
+                    
+                    {/* Info text based on userType */}
+                    {userType === 'wholesaler' && (
+                        <p className="text-yellow-400 text-xs mb-2">
+                            As a wholesaler, you can list products for retailers to purchase.
+                        </p>
+                    )}
+                    {userType === 'retailer' && (
+                        <p className="text-blue-400 text-xs mb-2">
+                            As a retailer, you can manage your store and inventory.
+                        </p>
+                    )}
                 </div>
 
                 {/* Location Selection */}
@@ -154,8 +183,8 @@ function Signup() {
                         {location ? '📍 Location Selected' : '📍 Select Your Location'}
                     </button>
                     {location && (
-                        <p className="text-white text-sm mt-2">
-                            {location.address}
+                        <p className="text-green-400 text-sm mt-2">
+                            ✓ {location.address}
                         </p>
                     )}
                 </div>
@@ -169,13 +198,13 @@ function Signup() {
                 <div className='flex justify-center mb-3'>
                     <button
                         onClick={signup}
-                        className='bg-red-500 w-full text-white font-bold px-2 py-2 rounded-lg hover:bg-red-600'>
+                        className='bg-yellow-500 w-full text-black font-bold px-2 py-2 rounded-lg hover:bg-yellow-600 transition-colors'>
                         Signup
                     </button>
                 </div>
 
                 <div>
-                    <h2 className='text-white'>Have an account? <Link className='text-red-500 font-bold' to={'/login'}>Login</Link></h2>
+                    <h2 className='text-white'>Have an account? <Link className='text-yellow-500 font-bold' to={'/login'}>Login</Link></h2>
                 </div>
             </div>
         </div>
