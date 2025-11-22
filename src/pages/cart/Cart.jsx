@@ -3,10 +3,11 @@ import myContext from '../../context/data/myContext';
 import Layout from '../../components/layout/Layout';
 import Modal from '../../components/modal/Modal';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteFromCart } from '../../redux/cartSlice';
+import { deleteFromCart, clearCart } from '../../redux/cartSlice';
 import { toast } from 'react-toastify';
 import { fireDB } from '../../firebase/FirebaseConfig';
 import { addDoc, collection } from 'firebase/firestore';
+import emailjs from '@emailjs/browser';
 
 
 function Cart() {
@@ -44,14 +45,52 @@ function Cart() {
     window.scrollTo(0, 0)
   }, [])
 
+  const createCalendarEvent = async ({ title, description, start, end, colorId }) => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      if (!userData || userData.provider !== "google") return; // only google users get events
+      
+      const accessToken = userData.token;
+      if (!accessToken) return;
 
+      const event = {
+        summary: title,
+        description: description,
+        colorId: String(colorId),
+        start: {
+          dateTime: start,
+          timeZone: "Asia/Kolkata"
+        },
+        end: {
+          dateTime: end,
+          timeZone: "Asia/Kolkata"
+        }
+      };
+
+      const res = await fetch(
+        "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(event)
+        }
+      );
+
+      console.log("Calendar response", await res.json());
+    } catch (err) {
+      console.log("Calendar Error:", err);
+    }
+  };
 
   const [name, setName] = useState("")
   const [address, setAddress] = useState("");
   const [pincode, setPincode] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
 
-
+  // Checkout Fn
   const buyNow = async () => {
     // validation 
     if (name === "" || address == "" || pincode == "" || phoneNumber == "") {
@@ -90,6 +129,7 @@ function Cart() {
       order_receipt: 'order_rcptid_' + name,
       name: "E-Bharat",
       description: "for testing purpose",
+      
       handler: function (response) {
         // console.log(response)
         toast.success('Payment Successful')
@@ -108,7 +148,8 @@ function Cart() {
           ),
           email: JSON.parse(localStorage.getItem("user")).user.email,
           userid: JSON.parse(localStorage.getItem("user")).user.uid,
-          paymentId
+          paymentId,
+          orderStatus: "Placed"
         }
 
         try {
@@ -116,6 +157,45 @@ function Cart() {
         } catch (error) {
           console.log(error)
         }
+
+        // Email Confirmation
+        const SERVICE_ID = "service_hg7l4ub";
+        const TEMPLATE_ID = "template_dsj6bh5";
+        const PUBLIC_KEY = "V9UvOkT9OP-eBVdMi";
+
+        const emailParams = {
+          user_email: orderInfo.email,
+          to_email: orderInfo.email,
+          user_name: addressInfo.name,
+          total_amount: grandTotal,
+          payment_id: paymentId,
+          order_date: orderInfo.date,
+          address: `${addressInfo.address}, ${addressInfo.pincode}`,
+          items: cartItems.map(i => `${i.title} (₹${i.price})`).join(", "),
+        };
+        
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 5);
+        try {
+          createCalendarEvent({
+            title: "SportsMart Order Arrival",
+            description: `Your order (${orderInfo.cartItems.length} items) from SportsMart is expected to be delivered.`,
+            colorId: "2",
+            start: deliveryDate.toISOString(),
+            end: new Date(deliveryDate.getTime() + 60*60*1000).toISOString()
+          })
+          emailjs.send(SERVICE_ID, TEMPLATE_ID, emailParams, PUBLIC_KEY).then(() => console.log("Email sent.")).catch((error) => console.log(error))
+        }
+        catch (error) {
+          console.log(error);
+        }
+
+        dispatch(clearCart());
+        localStorage.removeItem("cart");
+        
+        setTimeout (() => {
+          window.location.href = '/order'
+        }, 1000);
       },
 
       theme: {

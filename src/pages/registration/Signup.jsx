@@ -2,10 +2,11 @@ import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom'
 import myContext from '../../context/data/myContext';
 import { toast } from 'react-toastify';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, fireDB } from '../../firebase/FirebaseConfig';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, fireDB, googleProvider } from '../../firebase/FirebaseConfig';
+import { Timestamp, addDoc, setDoc, doc, collection } from 'firebase/firestore';
 import Loader from '../../components/loader/Loader';
+import { FcGoogle } from "react-icons/fc";
 
 function Signup() {
     const [name, setName] = useState("");
@@ -15,6 +16,7 @@ function Signup() {
     const context = useContext(myContext);
     const { loading, setLoading } = context;
 
+    // Email and Password
     const signup = async () => {
         setLoading(true)
         if (name === "" || email === "" || password === "") {
@@ -30,19 +32,29 @@ function Signup() {
                 name: name,
                 uid: users.user.uid,
                 email: users.user.email,
-                time : Timestamp.now()
+                time : Timestamp.now(),
+
+                // Personalisation
+                lastSearch: "",
+                lastCategory: "",
+                lastUpdated: Timestamp.now()
             }
             const userRef = collection(fireDB, "users")
-            await addDoc(userRef, user);
+            await setDoc(doc(fireDB, "users", users.user.uid), user)
             toast.success("Signed Up Succesfully")
-            console.log("Successful Toast Fire");
             setName("");
             setEmail("");
             setPassword("");
+            setTimeout (() => {
+                window.location.href = '/login'
+            }, 800);
             setLoading(false)
             
         } catch (error) {
-            console.log(error)
+            if (error.code === "auth/email-already-in-use") {
+                toast.error("Email already registered. Try logging in.");
+            }
+            console.log(error);
             setLoading(false)
         }
     }

@@ -10,7 +10,6 @@ import Order from "./pages/order/Order";
 import NoPage from "./pages/nopage/NoPage";
 import Cart from "./pages/cart/Cart";
 import Dashboard from "./pages/admin/dashboard/Dashboard";
-import WholesalerDashboard from "./pages/wholesaler/dashboard/WholesalerDashboard";
 import ProductInfo from "./pages/productInfo/ProductInfo";
 import Login from "./pages/registration/Login";
 import Signup from "./pages/registration/Signup";
@@ -33,92 +32,43 @@ function App() {
           } />
           <Route path="/cart" element={<Cart />} />
           <Route path="/dashboard" element={
-            <ProtectedRoutesForAdmin>
-              <Dashboard />
-            </ProtectedRoutesForAdmin>
-          } />
-          <Route path="/wholesaler-dashboard" element={
-            <ProtectedRoutesForWholesaler>
-              <WholesalerDashboard />
-            </ProtectedRoutesForWholesaler>
+            <ProtectedRoutesForAdmin><Dashboard /></ProtectedRoutesForAdmin>
           } />
           <Route path="/productinfo/:id" element={<ProductInfo />} />
           <Route path="/allproducts" element={<AllProducts />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          
-          {/* Updated: Allow both Admin and Wholesaler to add products */}
           <Route path="/addproduct" element={
-            <ProtectedRoutesForAdminAndWholesaler>
-              <AddProduct />
-            </ProtectedRoutesForAdminAndWholesaler>
-          } />
-          
-          {/* Updated: Allow both Admin and Wholesaler to update products */}
+            <ProtectedRoutesForAdmin><AddProduct /></ProtectedRoutesForAdmin>} />
           <Route path="/updateproduct" element={
-            <ProtectedRoutesForAdminAndWholesaler>
-              <UpdateProduct />
-            </ProtectedRoutesForAdminAndWholesaler>
-          } />
-          
+            <ProtectedRoutesForAdmin><UpdateProduct /></ProtectedRoutesForAdmin>} />
           <Route path="/*" element={<NoPage />} />
         </Routes>
-        <ToastContainer />
+        <ToastContainer/>
       </Router>
     </MyState>
+
   )
 }
 
-// Helper function to safely get user data from localStorage
-const getUserFromStorage = (key) => {
-  try {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error(`Error parsing ${key} from localStorage:`, error);
-    return null;
-  }
-}
+export default App
 
-// Protected route for regular users (any authenticated user)
 export const ProtectedRoutes = ({ children }) => {
-  const user = getUserFromStorage('currentUser');
-  const admin = getUserFromStorage('currentAdmin');
-  const wholesaler = getUserFromStorage('currentWholesaler');
-  if (user || admin || wholesaler) {
-    return children;
+  if (localStorage.getItem('user')) {
+    return children
   }
-  return <Navigate to='/login' />;
+  else {
+    return <Navigate to='/login' />
+  }
 }
 
-// Protected route for admin
-export const ProtectedRoutesForAdmin = ({ children }) => {
-  const admin = getUserFromStorage('user');
-  if (admin?.user?.email === 'testretailer@gmail.com') {
-    return children;
+export const ProtectedRoutesForAdmin = ({children}) => {
+  const admin = JSON.parse(localStorage.getItem('user'))
+  console.log(admin.user.email)
+  if (admin.user.email === 'testretailer@gmail.com') {
+    return children
   }
-  return <Navigate to='/login' />;
-}
-
-// Protected route for wholesaler
-export const ProtectedRoutesForWholesaler = ({ children }) => {
-  const wholesaler = getUserFromStorage('user');
-  if (wholesaler?.user?.email === 'arnavgupta5107@gmail.com') {
-    return children;
+  else {
+    return <Navigate to='/login' />
   }
-  return <Navigate to='/login' />;
 }
-
-// NEW: Protected route for both Admin and Wholesaler
-export const ProtectedRoutesForAdminAndWholesaler = ({ children }) => {
-  const user = getUserFromStorage('user');
-  const userEmail = user?.user?.email;
-  
-  // Allow both admin and wholesaler emails
-  if (userEmail === 'testretailer@gmail.com' || userEmail === 'arnavgupta5107@gmail.com') {
-    return children;
-  }
-  return <Navigate to='/login' />;
-}
-
-export default App;

@@ -2,9 +2,12 @@ import { Link } from 'react-router-dom'
 import myContext from '../../context/data/myContext';
 import { useContext, useState } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
-import { auth } from '../../firebase/FirebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, fireDB, googleProvider } from '../../firebase/FirebaseConfig';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import Loader from '../../components/loader/Loader';
+import { LiaSteamSquare } from 'react-icons/lia';
+import { FcGoogle } from "react-icons/fc";
 
 function Login() {
 
@@ -14,6 +17,7 @@ function Login() {
     const context = useContext(myContext)
     const { loading,setLoading} = context
 
+    // Email and Password
     const signin = async () => {
       setLoading(true);
       try {
@@ -48,6 +52,47 @@ function Login() {
         setLoading(false);
       }
     }
+
+    // Google Login
+    const loginWithGoogle = async () => {
+      try {
+        setLoading(true);
+
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+
+        // Checking Existence of User
+        const userRef = doc(fireDB, "users", user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          await setDoc(userRef, {
+            name: user.displayName || "",
+            email: user.email,
+            uid: user.uid,
+            time: Timestamp.now(),
+
+            lastSearch: "",
+            lastCategory: "",
+            lastUpdated: Timestamp.now()
+          })
+        }
+        localStorage.setItem("user", JSON.stringify({
+          user: user,
+          token: result._tokenResponse.oauthAccessToken,
+          provider: "google"
+        }));
+
+        toast.success("Login Successful!");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 800);
+      }
+      catch (error) {
+        console.log(error);
+        toast.error("Google Login Failed!");
+      }
+      setLoading(false);
+    }
    
     return (
         <div className=' flex justify-center items-center h-screen'>
@@ -81,8 +126,16 @@ function Login() {
                         Login
                     </button>
                 </div>
+                <div className='flex justify-center mb-3'>
+                    <button
+                        onClick={loginWithGoogle }
+                        className=' bg-white w-full text-black font-bold px-2 py-2 rounded-lg flex items-center justify-center gap-2 shadow hover:bg-gray-200'>
+                        <FcGoogle className='text-2xl' />
+                        Continue with Google
+                    </button>
+                </div>
                 <div>
-                    <h2 className='text-white'>Don't have an account <Link className=' text-yellow-500 font-bold' to={'/signup'}>Signup</Link></h2>
+                    <h2 className='text-white'>Don't have an account? <Link className=' text-yellow-500 font-bold' to={'/signup'}>Signup</Link></h2>
                 </div>
             </div>
         </div>

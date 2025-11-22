@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import MyContext from './myContext';
-import { fireDB } from '../../firebase/firebaseConfig';
-import { Timestamp, addDoc, collection, deleteDoc, doc, getDocs, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
+import { fireDB } from '../../firebase/FirebaseConfig';
+import { Timestamp, addDoc, collection, deleteDoc, doc, getDocs, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 
 
@@ -26,8 +26,6 @@ function MyState(props) {
     imageUrl: "",
     category: "",
     description: "",
-    quantity: "",
-    moq: "", // Minimum Order Quantity (for wholesale)
     time: Timestamp.now(),
     date: new Date().toLocaleString(
       "en-US",
@@ -37,6 +35,7 @@ function MyState(props) {
         year: "numeric",
       }
     )
+
   })
 
   // ********************** Add Product Section  **********************
@@ -44,52 +43,22 @@ function MyState(props) {
     if (products.title == null || products.price == null || products.imageUrl == null || products.category == null || products.description == null) {
       return toast.error('Please fill all fields')
     }
-    
     const productRef = collection(fireDB, "products")
     setLoading(true)
     try {
       await addDoc(productRef, products)
-      toast.success("Product added successfully")
-      
-      // Check if user is wholesaler or admin and redirect accordingly
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userEmail = user?.user?.email;
-      
-      setTimeout(() => {
-        if (userEmail === 'arnavgupta5107@gmail.com') {
-          window.location.href = '/wholesaler-dashboard'
-        } else {
-          window.location.href = '/dashboard'
-        }
+      toast.success("Product Add successfully")
+      setTimeout (() => {
+        window.location.href = '/dashboard'
       }, 800);
-      
       getProductData()
+      closeModal()
       setLoading(false)
     } catch (error) {
       console.log(error)
       setLoading(false)
-      toast.error("Failed to add product")
     }
-    
-    // Reset form
-    setProducts({
-      title: "",
-      price: "",
-      imageUrl: "",
-      category: "",
-      description: "",
-      quantity: "",
-      moq: "",
-      time: Timestamp.now(),
-      date: new Date().toLocaleString(
-        "en-US",
-        {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }
-      )
-    })
+    setProducts("")
   }
 
   const [product, setProduct] = useState([]);
@@ -118,48 +87,40 @@ function MyState(props) {
     }
   }
 
+
   const edithandle = (item) => {
     setProducts(item)
   }
-  
   // update product
   const updateProduct = async (item) => {
     setLoading(true)
     try {
       await setDoc(doc(fireDB, "products", products.id), products);
-      toast.success("Product updated successfully")
+      toast.success("Product Updated successfully")
       getProductData();
       setLoading(false)
-      
-      // Check if user is wholesaler or admin and redirect accordingly
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userEmail = user?.user?.email;
-      
-      if (userEmail === 'arnavgupta5107@gmail.com') {
-        window.location.href = '/wholesaler-dashboard'
-      } else {
-        window.location.href = '/dashboard'
-      }
+      window.location.href = '/dashboard'
     } catch (error) {
       setLoading(false)
       console.log(error)
-      toast.error("Failed to update product")
     }
     setProducts("")
   }
 
   const deleteProduct = async (item) => {
+
     try {
       setLoading(true)
       await deleteDoc(doc(fireDB, "products", item.id));
-      toast.success('Product deleted successfully')
+      toast.success('Product Deleted successfully')
       setLoading(false)
       getProductData()
     } catch (error) {
-      toast.error('Product deletion failed')
+      // toast.success('Product Deleted Falied')
       setLoading(false)
     }
   }
+
 
   const [order, setOrder] = useState([]);
 
@@ -168,8 +129,8 @@ function MyState(props) {
     try {
       const result = await getDocs(collection(fireDB, "orders"))
       const ordersArray = [];
-      result.forEach((doc) => {
-        ordersArray.push(doc.data());
+      result.forEach((docItem) => {
+        ordersArray.push({id: docItem.id, ...docItem.data()});
         setLoading(false)
       });
       setOrder(ordersArray);
@@ -177,6 +138,20 @@ function MyState(props) {
     } catch (error) {
       console.log(error)
       setLoading(false)
+    }
+  }
+
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await updateDoc(doc(fireDB, "orders", orderId), {
+        orderStatus: newStatus
+      });
+      toast.success("Order Status Updated!");
+      getOrderData();
+    } 
+    catch (error) {
+      console.log(error)
+      toast.error("Failed to Update Status");
     }
   }
 
@@ -200,23 +175,92 @@ function MyState(props) {
     }
   }
 
+  const [searchkey, setSearchkey] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [filterPrice, setFilterPrice] = useState('')
+
+  // Personalisation
+  const [userPreferences, setUserPreferences] = useState({
+    lastSearch: "",
+    lastCategory: ""
+  });
+  const saveUserPreferences = async ({ lastSearch, lastCategory } = {}) => {
+    try {
+        const raw = localStorage.getItem("user");
+        if (!raw) return;
+
+        const u = JSON.parse(raw).user;
+        if (!u || !u.uid) return;
+
+        const ref = doc(fireDB, "users", u.uid);
+
+        const current = userPreferences;
+
+        // Avoid overwriting with empty strings
+        const updatedPrefs = {
+            lastSearch: lastSearch?.trim() !== "" ? lastSearch : current.lastSearch,
+            lastCategory: lastCategory?.trim() !== "" ? lastCategory : current.lastCategory
+        };
+
+        // If no actual change, do not update Firestore
+        if (
+            updatedPrefs.lastSearch === current.lastSearch &&
+            updatedPrefs.lastCategory === current.lastCategory
+        ) {
+            return;
+        }
+
+        await updateDoc(ref, {
+            ...updatedPrefs,
+            lastUpdated: Timestamp.now()
+        });
+
+        // Save to local state
+        setUserPreferences(updatedPrefs);
+
+    } catch (err) {
+        console.error("Error saving user preferences:", err);
+    }
+  }; 
+  const loadUserPreferences = async () => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return;
+
+      const u = JSON.parse(raw).user;
+      if (!u || !u.uid) return;
+
+      const ref = doc(fireDB, "users", u.uid);
+      const snap = await getDoc(ref);
+
+      if (snap.exists()) {
+        const data = snap.data();
+        setUserPreferences({
+          lastSearch: data.lastSearch,
+          lastCategory: data.lastCategory
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
   useEffect(() => {
     getProductData();
     getOrderData();
     getUserData();
+    loadUserPreferences();
   }, []);
-
-  const [searchkey, setSearchkey] = useState('')
-  const [filterType, setFilterType] = useState('')
-  const [filterPrice, setFilterPrice] = useState('')
 
   return (
     <MyContext.Provider value={{
       mode, toggleMode, 
       loading, setLoading,
       products, setProducts, addProduct, product, updateProduct, edithandle, deleteProduct, 
-      order, user,
-      searchkey, setSearchkey, filterType, setFilterType, filterPrice, setFilterPrice
+      order, user, updateOrderStatus,
+      searchkey, setSearchkey, filterType, setFilterType, filterPrice, setFilterPrice,
+      userPreferences, setUserPreferences, saveUserPreferences, loadUserPreferences,
     }}>
       {props.children}
     </MyContext.Provider>
