@@ -103,16 +103,6 @@ export default function Navbar() {
                     All Products
                   </Link>
 
-                  <div className="flow-root">
-                    <Link
-                      to={'/order'}
-                      style={{ color: mode === 'dark' ? 'white' : '' }}
-                      className="-m-2 block p-2 font-medium text-gray-900"
-                    >
-                      Order
-                    </Link>
-                  </div>
-
                   {dashboardLink && (
                     <div className="flow-root">
                       <Link
@@ -210,14 +200,6 @@ export default function Navbar() {
                     style={{ color: mode === 'dark' ? 'white' : '' }}
                   >
                     All Products
-                  </Link>
-
-                  <Link
-                    to={'/order'}
-                    className="text-sm font-medium text-gray-700"
-                    style={{ color: mode === 'dark' ? 'white' : '' }}
-                  >
-                    Order
                   </Link>
 
                   {dashboardLink && (
