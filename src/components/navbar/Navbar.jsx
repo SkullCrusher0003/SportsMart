@@ -23,9 +23,9 @@ export default function Navbar() {
     }
   }
 
-  const user = getStorageItem('user') || getStorageItem('user')
-  const admin = getStorageItem('user') || getStorageItem('admin')
-  const wholesaler = getStorageItem('user') || getStorageItem('wholesaler')
+  const user = getStorageItem('user')
+  const admin = getStorageItem('admin')
+  const wholesaler = getStorageItem('wholesaler')
 
   const logout = () => {
     localStorage.removeItem('currentUser')
@@ -40,12 +40,19 @@ export default function Navbar() {
   const getDashboardLink = () => {
     const adminEmail = admin?.email || admin?.user?.email
     const wholesalerEmail = wholesaler?.email || wholesaler?.user?.email
+    const userEmail = user?.email || user?.user?.email
 
-    if (adminEmail === 'testretailer@gmail.com') {
+    // Check if user is admin/retailer
+    if (adminEmail === 'testretailer@gmail.com' || admin) {
       return "/dashboard"
     }
-    if (wholesalerEmail === 'arnavgupta5107@gmail.com') {
+    // Check if user is wholesaler
+    if (wholesalerEmail === 'arnavgupta5107@gmail.com' || wholesaler) {
       return "/wholesaler-dashboard"
+    }
+    // Check if regular user exists (retailer)
+    if (user || userEmail) {
+      return "/dashboard"
     }
     return null
   }
