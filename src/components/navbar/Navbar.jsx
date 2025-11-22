@@ -13,7 +13,6 @@ export default function Navbar() {
   const context = useContext(myContext)
   const { toggleMode, mode } = context
 
-  // Helper function to safely parse localStorage
   const getStorageItem = (key) => {
     try {
       const item = localStorage.getItem(key)
@@ -24,13 +23,11 @@ export default function Navbar() {
     }
   }
 
-  // Check both old and new localStorage keys for backward compatibility
   const user = getStorageItem('user') || getStorageItem('user')
   const admin = getStorageItem('user') || getStorageItem('admin')
   const wholesaler = getStorageItem('user') || getStorageItem('wholesaler')
 
   const logout = () => {
-    // Clear all possible keys
     localStorage.removeItem('currentUser')
     localStorage.removeItem('currentAdmin')
     localStorage.removeItem('currentWholesaler')
@@ -40,9 +37,7 @@ export default function Navbar() {
     window.location.href = "/"
   }
 
-  // Determine dashboard link based on user role
   const getDashboardLink = () => {
-    // Check if user object has the email directly or nested in user property
     const adminEmail = admin?.email || admin?.user?.email
     const wholesalerEmail = wholesaler?.email || wholesaler?.user?.email
 
@@ -56,7 +51,6 @@ export default function Navbar() {
   }
 
   const dashboardLink = getDashboardLink()
-  console.log(dashboardLink)
   const cartItems = useSelector((state) => state.cart)
 
   return (
@@ -122,11 +116,11 @@ export default function Navbar() {
                   {dashboardLink && (
                     <div className="flow-root">
                       <Link
-                        to={dashboardLink.path}
+                        to={dashboardLink}
                         className="-m-2 block p-2 font-medium text-gray-900"
                         style={{ color: mode === 'dark' ? 'white' : '' }}
                       >
-                        {dashboardLink.label}
+                        Dashboard
                       </Link>
                     </div>
                   )}
@@ -142,16 +136,6 @@ export default function Navbar() {
                       </a>
                     </div>
                   )}
-
-                  <div className="flow-root">
-                    <Link to={'/'} className="-m-2 block p-2 font-medium text-gray-900 cursor-pointer">
-                      <img
-                        className="inline-block w-10 h-10 rounded-full"
-                        src="https://overreacted.io/static/profile-pic-c715447ce38098828758e525a1128b87.jpg"
-                        alt="Dan_Abromov"
-                      />
-                    </Link>
-                  </div>
                 </div>
 
                 <div className="border-t border-gray-200 px-4 py-6">
@@ -238,7 +222,7 @@ export default function Navbar() {
 
                   {dashboardLink && (
                     <Link
-                      to={dashboardLink.path}
+                      to={dashboardLink}
                       className="text-sm font-medium text-gray-700"
                       style={{ color: mode === 'dark' ? 'white' : '' }}
                     >
@@ -279,16 +263,6 @@ export default function Navbar() {
                       INDIA
                     </span>
                   </a>
-                </div>
-
-                <div className="hidden lg:ml-8 lg:flex">
-                  <Link to={dashboardLink} className="flex items-center text-gray-700">
-                    <img
-                      className="inline-block w-10 h-10 rounded-full"
-                      src="https://overreacted.io/static/profile-pic-c715447ce38098828758e525a1128b87.jpg"
-                      alt="Dan_Abromov"
-                    />
-                  </Link>
                 </div>
 
                 {/* Theme Toggle */}
