@@ -1,100 +1,185 @@
 import { useContext, useState } from 'react';
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import myContext from '../../context/data/myContext';
+import { LocationContext } from '../../context/location/LocationContext';
 import { toast } from 'react-toastify';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, fireDB } from '../../firebase/FirebaseConfig';
 import { Timestamp, addDoc, collection } from 'firebase/firestore';
 import Loader from '../../components/loader/Loader';
+import LocationPicker from '../../components/location/LocationPicker';
 
 function Signup() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [phone, setPhone] = useState("");
+    const [userType, setUserType] = useState("customer"); // customer, wholesaler, retailer
+    const [location, setLocation] = useState(null);
+    const [showLocationPicker, setShowLocationPicker] = useState(false);
 
     const context = useContext(myContext);
     const { loading, setLoading } = context;
+    
+    const { userLocation } = useContext(LocationContext);
+    const navigate = useNavigate();
+
+    const handleLocationSelect = (selectedLocation) => {
+        setLocation(selectedLocation);
+        setShowLocationPicker(false);
+        toast.success('Location selected successfully');
+    };
 
     const signup = async () => {
-        setLoading(true)
-        if (name === "" || email === "" || password === "") {
-            return toast.error("All fields are required")
+        setLoading(true);
+        
+        if (name === "" || email === "" || password === "" || phone === "") {
+            setLoading(false);
+            return toast.error("All fields are required");
+        }
+
+        if (!location) {
+            setLoading(false);
+            return toast.error("Please select your location");
         }
 
         try {
             const users = await createUserWithEmailAndPassword(auth, email, password);
 
-            console.log(users)
-
             const user = {
                 name: name,
                 uid: users.user.uid,
                 email: users.user.email,
-                time : Timestamp.now()
-            }
-            const userRef = collection(fireDB, "users")
+                phone: phone,
+                userType: userType,
+                location: {
+                    lat: location.lat,
+                    lng: location.lng,
+                    address: location.address
+                },
+                time: Timestamp.now()
+            };
+            
+            const userRef = collection(fireDB, "users");
             await addDoc(userRef, user);
-            toast.success("Signed Up Succesfully")
-            console.log("Successful Toast Fire");
+            
+            toast.success("Signed Up Successfully");
+            
             setName("");
             setEmail("");
             setPassword("");
-            setLoading(false)
+            setPhone("");
+            setLocation(null);
+            setLoading(false);
+            
+            navigate('/login');
             
         } catch (error) {
-            console.log(error)
-            setLoading(false)
+            console.log(error);
+            toast.error(error.message);
+            setLoading(false);
         }
-    }
+    };
 
     return (
-        <div className=' flex justify-center items-center h-screen'>
+        <div className='flex justify-center items-center min-h-screen py-8'>
             {loading && <Loader/>}
-            <div className=' bg-gray-800 px-10 py-10 rounded-xl '>
+            <div className='bg-gray-800 px-10 py-10 rounded-xl w-full max-w-2xl'>
                 <div className="">
                     <h1 className='text-center text-white text-xl mb-4 font-bold'>Signup</h1>
                 </div>
+
                 <div>
-                    <input type="text"
+                    <input 
+                        type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         name='name'
-                        className=' bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
+                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
                         placeholder='Name'
                     />
                 </div>
 
                 <div>
-                    <input type="email"
+                    <input 
+                        type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         name='email'
-                        className=' bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
+                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
                         placeholder='Email'
                     />
                 </div>
+
+                <div>
+                    <input 
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        name='phone'
+                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
+                        placeholder='Phone Number'
+                    />
+                </div>
+
                 <div>
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className=' bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
+                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
                         placeholder='Password'
                     />
                 </div>
-                <div className=' flex justify-center mb-3'>
+
+                <div>
+                    <select
+                        value={userType}
+                        onChange={(e) => setUserType(e.target.value)}
+                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none'
+                    >
+                        <option value="customer">Customer</option>
+                        <option value="wholesaler">Wholesaler</option>
+                        <option value="retailer">Retailer</option>
+                    </select>
+                </div>
+
+                {/* Location Selection */}
+                <div className="mb-4">
+                    <button
+                        type="button"
+                        onClick={() => setShowLocationPicker(!showLocationPicker)}
+                        className='bg-gray-600 w-full px-2 py-2 rounded-lg text-white hover:bg-gray-700'
+                    >
+                        {location ? '📍 Location Selected' : '📍 Select Your Location'}
+                    </button>
+                    {location && (
+                        <p className="text-white text-sm mt-2">
+                            {location.address}
+                        </p>
+                    )}
+                </div>
+
+                {showLocationPicker && (
+                    <div className="mb-4 bg-white p-4 rounded-lg">
+                        <LocationPicker onLocationSelect={handleLocationSelect} />
+                    </div>
+                )}
+
+                <div className='flex justify-center mb-3'>
                     <button
                         onClick={signup}
-                        className=' bg-red-500 w-full text-white font-bold  px-2 py-2 rounded-lg'>
+                        className='bg-red-500 w-full text-white font-bold px-2 py-2 rounded-lg hover:bg-red-600'>
                         Signup
                     </button>
                 </div>
+
                 <div>
-                    <h2 className='text-white'>Have an account <Link className=' text-red-500 font-bold' to={'/login'}>Login</Link></h2>
+                    <h2 className='text-white'>Have an account? <Link className='text-red-500 font-bold' to={'/login'}>Login</Link></h2>
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
-export default Signup
+export default Signup;
