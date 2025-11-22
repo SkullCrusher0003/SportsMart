@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom'
 import myContext from '../../context/data/myContext';
 import { useContext, useState } from 'react';
 import { toast } from 'react-toastify';
-import { auth } from '../../firebase/FirebaseConfig';
+import { auth, fireDB } from '../../firebase/FirebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import Loader from '../../components/loader/Loader';
 
 function Login() {
@@ -14,7 +15,6 @@ function Login() {
     const { loading, setLoading } = context;
 
     const signin = async () => {
-        // Validation
         if (email === '' || password === '') {
             toast.error('All fields are required', {
                 position: "top-right",
@@ -33,8 +33,31 @@ function Login() {
         try {
             const result = await signInWithEmailAndPassword(auth, email, password);
             
-            // Store user data in localStorage (keeping your original approach)
-            localStorage.setItem('user', JSON.stringify(result));
+            // Fetch user data from Firestore to get userType
+            const usersRef = collection(fireDB, "users");
+            const q = query(usersRef, where("uid", "==", result.user.uid));
+            const querySnapshot = await getDocs(q);
+            
+            let userData = {
+                uid: result.user.uid,
+                email: result.user.email,
+                userType: 'customer' // Default to customer if not found
+            };
+            
+            if (!querySnapshot.empty) {
+                const userDoc = querySnapshot.docs[0].data();
+                userData = {
+                    uid: result.user.uid,
+                    email: result.user.email,
+                    name: userDoc.name,
+                    phone: userDoc.phone,
+                    userType: userDoc.userType || 'customer',
+                    location: userDoc.location || null
+                };
+            }
+            
+            // Store complete user data in localStorage
+            localStorage.setItem('user', JSON.stringify(userData));
             
             toast.success('Signed In Successfully', {
                 position: "top-right",
@@ -43,14 +66,20 @@ function Login() {
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
-                progress: undefined,
                 theme: "colored",
             });
 
             setLoading(false);
             
+            // Redirect based on userType
             setTimeout(() => {
-                window.location.href = '/';
+                if (userData.userType === 'wholesaler') {
+                    window.location.href = '/wholesaler-dashboard';
+                } else if (userData.userType === 'retailer' || userData.userType === 'admin') {
+                    window.location.href = '/dashboard';
+                } else {
+                    window.location.href = '/';
+                }
             }, 800);
             
         } catch (error) {
@@ -58,7 +87,6 @@ function Login() {
             
             let errorMessage = 'Sign In Failed';
             
-            // Provide specific error messages
             if (error.code === 'auth/user-not-found') {
                 errorMessage = 'No account found with this email';
             } else if (error.code === 'auth/wrong-password') {
@@ -76,7 +104,6 @@ function Login() {
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
-                progress: undefined,
                 theme: "colored",
             });
             
@@ -84,7 +111,6 @@ function Login() {
         }
     };
 
-    // Handle Enter key press
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             signin();
