@@ -42,29 +42,34 @@ function App() {
             } />
             <Route path="/cart" element={<Cart />} />
             <Route path="/shops" element={<ShopListing />} />
+            
+            {/* Dashboard accessible by both retailers and admins */}
             <Route path="/dashboard" element={
               <ProtectedRoutesForAdmin>
                 <Dashboard />
               </ProtectedRoutesForAdmin>
             } />
+            
+            {/* Wholesaler Dashboard */}
             <Route path="/wholesaler-dashboard" element={
               <ProtectedRoutesForWholesaler>
                 <WholesalerDashboard />
               </ProtectedRoutesForWholesaler>
             } />
+            
             <Route path="/productinfo/:id" element={<ProductInfo />} />
             <Route path="/allproducts" element={<AllProducts />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             
-            {/* Updated: Allow both Admin and Wholesaler to add products */}
+            {/* Allow both Admin and Wholesaler to add products */}
             <Route path="/addproduct" element={
               <ProtectedRoutesForAdminAndWholesaler>
                 <AddProduct />
               </ProtectedRoutesForAdminAndWholesaler>
             } />
             
-            {/* Updated: Allow both Admin and Wholesaler to update products */}
+            {/* Allow both Admin and Wholesaler to update products */}
             <Route path="/updateproduct" element={
               <ProtectedRoutesForAdminAndWholesaler>
                 <UpdateProduct />
@@ -93,42 +98,64 @@ const getUserFromStorage = (key) => {
 
 // Protected route for regular users (any authenticated user)
 export const ProtectedRoutes = ({ children }) => {
-  const user = getUserFromStorage('currentUser');
-  const admin = getUserFromStorage('currentAdmin');
-  const wholesaler = getUserFromStorage('currentWholesaler');
-  if (user || admin || wholesaler) {
+  const user = getUserFromStorage('user');
+  if (user) {
     return children;
   }
   return <Navigate to='/login' />;
 }
 
-// Protected route for admin
+// Protected route for admin/retailer - UPDATED to include regular users
 export const ProtectedRoutesForAdmin = ({ children }) => {
-  const admin = getUserFromStorage('user');
-  if (admin?.user?.email === 'testretailer@gmail.com') {
+  const user = getUserFromStorage('user');
+  
+  if (!user) {
+    return <Navigate to='/login' />;
+  }
+  
+  const userType = user?.userType;
+  
+  // Allow users with 'retailer', 'admin' userType, or any logged-in user (regular customers)
+  if (userType === 'retailer' || userType === 'admin' || user) {
     return children;
   }
+  
   return <Navigate to='/login' />;
 }
 
 // Protected route for wholesaler
 export const ProtectedRoutesForWholesaler = ({ children }) => {
-  const wholesaler = getUserFromStorage('user');
-  if (wholesaler?.user?.email === 'arnavgupta5107@gmail.com') {
+  const user = getUserFromStorage('user');
+  
+  if (!user) {
+    return <Navigate to='/login' />;
+  }
+  
+  const userType = user?.userType;
+  
+  // Allow users with 'wholesaler' userType
+  if (userType === 'wholesaler') {
     return children;
   }
+  
   return <Navigate to='/login' />;
 }
 
-// NEW: Protected route for both Admin and Wholesaler
+// Protected route for both Admin/Retailer and Wholesaler
 export const ProtectedRoutesForAdminAndWholesaler = ({ children }) => {
   const user = getUserFromStorage('user');
-  const userEmail = user?.user?.email;
   
-  // Allow both admin and wholesaler emails
-  if (userEmail === 'testretailer@gmail.com' || userEmail === 'arnavgupta5107@gmail.com') {
+  if (!user) {
+    return <Navigate to='/login' />;
+  }
+  
+  const userType = user?.userType;
+  
+  // Allow retailer, admin, and wholesaler userTypes
+  if (userType === 'retailer' || userType === 'admin' || userType === 'wholesaler') {
     return children;
   }
+  
   return <Navigate to='/login' />;
 }
 
