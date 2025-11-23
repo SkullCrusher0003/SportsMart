@@ -2,162 +2,125 @@ import React, { useContext, useEffect, useState } from 'react'
 import myContext from '../../context/data/myContext'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
-import { addToCart, deleteFromCart } from '../../redux/cartSlice'
-import { Navigate } from 'react-router-dom'
+import { addToCart } from '../../redux/cartSlice'
 
 function ProductCard() {
-    const context = useContext(myContext)
-    const { mode, product, searchkey, filterType, filterPrice } = context;
+    const context = useContext(myContext);
+    const { mode, product, userPreferences } = context;
 
-    const dispatch = useDispatch()
-    const cartItems = useSelector((state) => state.cart)
-    
-    // State to track quantity for each product
-    const [quantities, setQuantities] = useState({})
+    const dispatch = useDispatch();
+    const cartItems = useSelector((state) => state.cart);
 
-    // Initialize quantities for all products
+    /* -------------------- QUANTITY STATE -------------------- */
+    const [quantities, setQuantities] = useState({});
     useEffect(() => {
-        const initialQuantities = {}
-        product.forEach(item => {
-            initialQuantities[item.id] = 1
-        })
-        setQuantities(initialQuantities)
-    }, [product])
+        const q = {};
+        product.forEach(item => q[item.id] = 1);
+        setQuantities(q);
+    }, [product]);
 
-    // Handle quantity change
-    const handleQuantityChange = (productId, change) => {
+    const changeQty = (id, delta) => {
         setQuantities(prev => ({
             ...prev,
-            [productId]: Math.max(1, (prev[productId] || 1) + change)
-        }))
-    }
+            [id]: Math.max(1, (prev[id] || 1) + delta)
+        }));
+    };
 
-    // Add to cart with quantity
-    const addCart = (product, e) => {
-        e.stopPropagation() // Prevent navigation when clicking add to cart
-        const quantity = quantities[product.id] || 1
-        dispatch(addToCart({ ...product, quantity }))
-        toast.success(`Added ${quantity} item(s) to cart`)
-        // Reset quantity to 1 after adding
-        setQuantities(prev => ({ ...prev, [product.id]: 1 }))
-    }
+    /* -------------------- ADD TO CART -------------------- */
+    const addCart = (item, e) => {
+        e.stopPropagation();
+        const qty = quantities[item.id] || 1;
+        dispatch(addToCart({ ...item, quantity: qty }));
+        toast.success(`Added ${qty} item(s)`);
+        setQuantities(prev => ({ ...prev, [item.id]: 1 }));
+    };
 
-    useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cartItems));
-    }, [cartItems])
+    /* ---------------- PERSONALISATION SORT ---------------- */
+    const lastSearch = userPreferences.lastSearch.toLowerCase();
+    const lastCategory = userPreferences.lastCategory.toLowerCase();
+
+    const personalisedList = [...product].sort((a, b) => {
+        let aScore = 0, bScore = 0;
+
+        if (lastSearch) {
+            if (a.title.toLowerCase().includes(lastSearch)) aScore += 2;
+            if (b.title.toLowerCase().includes(lastSearch)) bScore += 2;
+        }
+        if (lastCategory) {
+            if (a.category.toLowerCase() === lastCategory) aScore += 1;
+            if (b.category.toLowerCase() === lastCategory) bScore += 1;
+        }
+        return bScore - aScore;
+    });
 
     return (
         <section className="text-gray-600 body-font">
             <div className="container px-5 py-8 md:py-16 mx-auto">
                 <div className="lg:w-1/2 w-full mb-6 lg:mb-10">
-                    <h1 className="sm:text-3xl text-2xl font-medium title-font mb-2 text-gray-900" style={{ color: mode === 'dark' ? 'white' : '' }}>
-                        Our Latest Collection
+                    <h1 className="sm:text-3xl text-2xl font-medium mb-2"
+                        style={{ color: mode === 'dark' ? 'white' : '' }}>
+                        Recommended For You
                     </h1>
                     <div className="h-1 w-20 bg-pink-600 rounded"></div>
                 </div>
 
-                <div className="flex flex-wrap -m-4">
-                    {product.filter((obj) => obj.title.toLowerCase().includes(searchkey))
-                        .filter((obj) => obj.category.toLowerCase().includes(filterType))
-                        .filter((obj) => obj.price.includes(filterPrice)).slice(0, 8).map((item, index) => {
-                            const { title, price, description, imageUrl } = item;
-                            const currentQuantity = quantities[item.id] || 1;
-                            
-                            return (
-                                <div 
-                                    key={item.id || index}
-                                    onClick={() => window.location.href = `/productinfo/${item.id}`}
-                                    className="p-4 md:w-1/4 drop-shadow-lg"
-                                >
-                                    <div 
-                                        className="h-full border-2 hover:shadow-gray-100 hover:shadow-2xl transition-shadow duration-300 ease-in-out border-gray-200 border-opacity-60 rounded-2xl overflow-hidden" 
-                                        style={{ backgroundColor: mode === 'dark' ? 'rgb(46 49 55)' : '', color: mode === 'dark' ? 'white' : '' }}
-                                    >
-                                        <div className="flex justify-center cursor-pointer">
-                                            <img 
-                                                className="rounded-2xl w-full h-80 p-2 hover:scale-110 transition-scale-110 duration-300 ease-in-out" 
-                                                src={imageUrl} 
-                                                alt={title} 
-                                            />
-                                        </div>
-                                        <div className="p-5 border-t-2">
-                                            <h2 
-                                                className="tracking-widest text-xs title-font font-medium text-gray-400 mb-1" 
-                                                style={{ color: mode === 'dark' ? 'white' : '' }}
-                                            >
-                                                E-Bharat
-                                            </h2>
-                                            <h1 
-                                                className="title-font text-lg font-medium text-gray-900 mb-3" 
-                                                style={{ color: mode === 'dark' ? 'white' : '' }}
-                                            >
-                                                {title}
-                                            </h1>
-                                            <p 
-                                                className="leading-relaxed mb-3" 
-                                                style={{ color: mode === 'dark' ? 'white' : '' }}
-                                            >
-                                                ₹ {price}
-                                            </p>
-                                            
-                                            {/* Quantity Selector */}
-                                            <div 
-                                                className="flex items-center justify-center mb-3 gap-3"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleQuantityChange(item.id, -1)
-                                                    }}
-                                                    className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center font-bold text-gray-700"
-                                                    style={{ 
-                                                        backgroundColor: mode === 'dark' ? 'rgb(55 65 81)' : '', 
-                                                        color: mode === 'dark' ? 'white' : '' 
-                                                    }}
-                                                >
-                                                    -
-                                                </button>
-                                                <span 
-                                                    className="w-12 text-center font-semibold"
-                                                    style={{ color: mode === 'dark' ? 'white' : '' }}
-                                                >
-                                                    {currentQuantity}
-                                                </span>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        handleQuantityChange(item.id, 1)
-                                                    }}
-                                                    className="w-8 h-8 rounded-lg bg-gray-200 hover:bg-gray-300 flex items-center justify-center font-bold text-gray-700"
-                                                    style={{ 
-                                                        backgroundColor: mode === 'dark' ? 'rgb(55 65 81)' : '', 
-                                                        color: mode === 'dark' ? 'white' : '' 
-                                                    }}
-                                                >
-                                                    +
-                                                </button>
-                                            </div>
-
-                                            {/* Add to Cart Button */}
-                                            <div className="flex justify-center">
-                                                <button 
-                                                    onClick={(e) => addCart(item, e)}
-                                                    type="button" 
-                                                    className="focus:outline-none text-white bg-pink-600 hover:bg-pink-700 focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm w-full py-2"
-                                                >
-                                                    Add To Cart
-                                                </button>
-                                            </div>
-                                        </div>
+                <div className="flex flex-wrap justify-center md:justify-start -m-4">
+                    {personalisedList.slice(0, 4).map(item => {
+                        const qty = quantities[item.id] || 1;
+                        return (
+                            <div className="p-4 md:w-1/4 drop-shadow-lg" key={item.id}
+                                onClick={() => window.location.href = `/productinfo/${item.id}`}>
+                                
+                                <div className="h-full border-2 rounded-2xl overflow-hidden"
+                                    style={{
+                                        backgroundColor: mode === 'dark' ? 'rgb(46,49,55)' : '',
+                                        color: mode === 'dark' ? 'white' : ''
+                                    }}>
+                                    
+                                    <div className="flex justify-center cursor-pointer">
+                                        <img className="rounded-2xl w-full h-80 p-2"
+                                             src={item.imageUrl} alt={item.title} />
                                     </div>
+
+                                    <div className="p-5 border-t-2">
+                                        <h2 className="text-xs tracking-widest font-medium text-gray-400">
+                                            E-Bharat
+                                        </h2>
+
+                                        <h1 className="text-lg font-medium mb-3"
+                                            style={{ color: mode === 'dark' ? 'white' : '' }}>
+                                            {item.title}
+                                        </h1>
+
+                                        <p>₹ {item.price}</p>
+
+                                        {/* Quantity */}
+                                        <div className="flex items-center justify-center gap-3 my-3"
+                                            onClick={(e) => e.stopPropagation()}>
+                                            <button onClick={(e) => { e.stopPropagation(); changeQty(item.id, -1); }}
+                                                className="w-8 h-8 rounded bg-gray-200">-</button>
+
+                                            <span className="w-10 text-center font-semibold">{qty}</span>
+
+                                            <button onClick={(e) => { e.stopPropagation(); changeQty(item.id, 1); }}
+                                                className="w-8 h-8 rounded bg-gray-200">+</button>
+                                        </div>
+
+                                        <button onClick={(e) => addCart(item, e)}
+                                            className="w-full bg-pink-600 text-white py-2 rounded-lg">
+                                            Add To Cart
+                                        </button>
+                                    </div>
+
                                 </div>
-                            )
-                        })}
+                            </div>
+                        );
+                    })}
                 </div>
+
             </div>
         </section>
-    )
+    );
 }
 
-export default ProductCard
+export default ProductCard;

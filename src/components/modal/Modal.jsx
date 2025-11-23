@@ -1,7 +1,7 @@
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 
-export default function Modal({ name, address, pincode, phoneNumber, setName, setAddress, setPincode, setPhoneNumber, buyNow }) {
+export default function Modal({ name, address, pincode, phoneNumber, setName, setAddress, setPincode, setPhoneNumber, buyNow, buyNowCOD }) {
     let [isOpen, setIsOpen] = useState(false)
 
     function closeModal() {
@@ -78,8 +78,25 @@ export default function Modal({ name, address, pincode, phoneNumber, setName, se
                                                         </div>
 
                                                     </form>
-                                                    <button onClick={()=>{buyNow(); closeModal()}} type="button" className="focus:outline-none w-full text-white bg-violet-600 hover:bg-violet-800  outline-0 font-medium rounded-lg text-sm px-5 py-2.5 ">Order Now</button>
-                                                </div>
+                                                    <div className="space-y-3">
+
+                                                        {/* Online Payment */}
+                                                        <button
+                                                            onClick={() => { buyNow(); closeModal(); }}
+                                                            type="button"
+                                                            className="w-full text-white bg-violet-600 hover:bg-violet-800 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                            Pay Online
+                                                        </button>
+
+                                                        {/* Cash on Delivery */}
+                                                        <button
+                                                            onClick={() => { buyNowCOD(); closeModal(); }}
+                                                            type="button"
+                                                            className="w-full text-white bg-green-600 hover:bg-green-800 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                            Cash on Delivery
+                                                        </button>
+
+                                                    </div></div>
                                             </div>
                                         </div>
                                     </section>

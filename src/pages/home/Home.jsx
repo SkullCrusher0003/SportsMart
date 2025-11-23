@@ -27,7 +27,6 @@ function Home() {
   return (
     <Layout>
       <HeroSection />
-      <Filter />
       <ProductCard />
       <div className='flex justify-center -mt-10 mb-4'>
         <Link to={'/allproducts'}>

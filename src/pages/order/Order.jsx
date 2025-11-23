@@ -4,7 +4,8 @@ import Layout from '../../components/layout/Layout'
 import Loader from '../../components/loader/Loader'
 
 function Order() {
-  const userid = JSON.parse(localStorage.getItem("user")).user.uid
+  const userData = JSON.parse(localStorage.getItem("user"));
+  const userid = userData?.uid || userData?.user?.uid;
   const context = useContext(myContext)
   const { mode, loading, order } = context
   return (
@@ -15,7 +16,6 @@ function Order() {
           <div className=" h-full pt-10">
             {
               order.filter(obj => obj.userid == userid).map((order) => {
-                // order.cartItems.map()
                 return (
                   <div className="mx-auto max-w-5xl justify-center px-6 md:flex md:space-x-6 xl:px-0">
                     {

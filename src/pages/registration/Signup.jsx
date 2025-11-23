@@ -1,214 +1,262 @@
-import { useContext, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'
-import myContext from '../../context/data/myContext';
-import { LocationContext } from '../../context/location/LocationContext';
-import { toast } from 'react-toastify';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, fireDB } from '../../firebase/FirebaseConfig';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
-import Loader from '../../components/loader/Loader';
-import LocationPicker from '../../components/location/LocationPicker';
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import myContext from "../../context/data/myContext";
+import { toast } from "react-toastify";
+import {
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { auth, fireDB } from "../../firebase/FirebaseConfig";
+import { Timestamp, setDoc, doc } from "firebase/firestore";
+import Loader from "../../components/loader/Loader";
+import LocationPicker from "../../components/location/LocationPicker";
+import emailjs from "@emailjs/browser";
 
 function Signup() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [phone, setPhone] = useState("");
-    const [userType, setUserType] = useState("customer");
-    const [location, setLocation] = useState(null);
-    const [showLocationPicker, setShowLocationPicker] = useState(false);
+  // BASIC FIELDS
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
 
-    const context = useContext(myContext);
-    const { loading, setLoading } = context;
-    
-    const { userLocation } = useContext(LocationContext);
-    const navigate = useNavigate();
+  // New fields from teammates
+  const [userType, setUserType] = useState("customer");
+  const [location, setLocation] = useState(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
 
-    const handleLocationSelect = (selectedLocation) => {
-        setLocation(selectedLocation);
-        setShowLocationPicker(false);
-        toast.success('Location selected successfully');
-    };
+  // OTP STATES
+  const [otpSent, setOtpSent] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [enteredOtp, setEnteredOtp] = useState("");
 
-    const signup = async () => {
-        setLoading(true);
-        
-        if (name === "" || email === "" || password === "" || phone === "") {
-            setLoading(false);
-            return toast.error("All fields are required");
-        }
+  const { loading, setLoading } = useContext(myContext);
+  const navigate = useNavigate();
 
-        if (!location) {
-            setLoading(false);
-            return toast.error("Please select your location");
-        }
+  // 📌 SEND OTP
+  const sendOTP = async () => {
+    if (!email.trim()) return toast.error("Please enter a valid email first.");
 
-        try {
-            const users = await createUserWithEmailAndPassword(auth, email, password);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
 
-            const user = {
-                name: name,
-                uid: users.user.uid,
-                email: users.user.email,
-                phone: phone,
-                userType: userType,
-                location: {
-                    lat: location.lat,
-                    lng: location.lng,
-                    address: location.address
-                },
-                time: Timestamp.now(),
-                date: new Date().toLocaleString("en-US", {
-                    month: "short",
-                    day: "2-digit",
-                    year: "numeric",
-                })
-            };
-            
-            const userRef = collection(fireDB, "users");
-            await addDoc(userRef, user);
-            
-            toast.success("Signed Up Successfully");
-            
-            setName("");
-            setEmail("");
-            setPassword("");
-            setPhone("");
-            setLocation(null);
-            setUserType("customer");
-            setLoading(false);
-            
-            navigate('/login');
-            
-        } catch (error) {
-            console.log(error);
-            
-            let errorMessage = error.message;
-            if (error.code === 'auth/email-already-in-use') {
-                errorMessage = 'This email is already registered';
-            } else if (error.code === 'auth/weak-password') {
-                errorMessage = 'Password should be at least 6 characters';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Invalid email address';
-            }
-            
-            toast.error(errorMessage);
-            setLoading(false);
-        }
-    };
+    const expiry = new Date(Date.now() + 15 * 60000).toLocaleTimeString();
 
-    return (
-        <div className='flex justify-center items-center min-h-screen py-8'>
-            {loading && <Loader/>}
-            <div className='bg-gray-800 px-10 py-10 rounded-xl w-full max-w-md mx-4'>
-                <div className="">
-                    <h1 className='text-center text-white text-xl mb-4 font-bold'>Signup</h1>
-                </div>
+    try {
+      setLoading(true);
+      await emailjs.send(
+        "service_wq5k3l8",
+        "template_gla4fmd",
+        {
+          to_email: email,
+          otp_code: otp,
+          time: expiry,
+        },
+        "NzEEdJq8g6Ep5mSAZ"
+      );
 
-                <div>
-                    <input 
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        name='name'
-                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
-                        placeholder='Name'
-                    />
-                </div>
+      toast.success("OTP sent.");
+      setOtpSent(true);
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to send OTP.");
+    }
 
-                <div>
-                    <input 
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        name='email'
-                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
-                        placeholder='Email'
-                    />
-                </div>
+    setLoading(false);
+  };
 
-                <div>
-                    <input 
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        name='phone'
-                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
-                        placeholder='Phone Number'
-                    />
-                </div>
+  // 📌 LOCATION SELECT
+  const handleLocationSelect = (selected) => {
+    setLocation(selected);
+    setShowLocationPicker(false);
+    toast.success("Location selected successfully");
+  };
 
-                <div>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white placeholder:text-gray-200 outline-none'
-                        placeholder='Password'
-                    />
-                </div>
+  // 📌 FINAL SIGNUP
+  const signup = async () => {
+    if (!name || !email || !password || !phone)
+      return toast.error("All fields are required");
 
-                <div>
-                    <label className="text-gray-300 text-sm mb-1 block">Account Type</label>
-                    <select
-                        value={userType}
-                        onChange={(e) => setUserType(e.target.value)}
-                        className='bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none'
-                    >
-                        <option value="customer">Customer</option>
-                        <option value="wholesaler">Wholesaler</option>
-                        <option value="retailer">Retailer</option>
-                    </select>
-                    
-                    {/* Info text based on userType */}
-                    {userType === 'wholesaler' && (
-                        <p className="text-yellow-400 text-xs mb-2">
-                            As a wholesaler, you can list products for retailers to purchase.
-                        </p>
-                    )}
-                    {userType === 'retailer' && (
-                        <p className="text-blue-400 text-xs mb-2">
-                            As a retailer, you can manage your store and inventory.
-                        </p>
-                    )}
-                </div>
+    if (!location) return toast.error("Please select your location");
 
-                {/* Location Selection */}
-                <div className="mb-4">
-                    <button
-                        type="button"
-                        onClick={() => setShowLocationPicker(!showLocationPicker)}
-                        className='bg-gray-600 w-full px-2 py-2 rounded-lg text-white hover:bg-gray-700'
-                    >
-                        {location ? '📍 Location Selected' : '📍 Select Your Location'}
-                    </button>
-                    {location && (
-                        <p className="text-green-400 text-sm mt-2">
-                            ✓ {location.address}
-                        </p>
-                    )}
-                </div>
+    if (!otpSent) return toast.error("Please verify OTP before signup");
 
-                {showLocationPicker && (
-                    <div className="mb-4 bg-white p-4 rounded-lg">
-                        <LocationPicker onLocationSelect={handleLocationSelect} />
-                    </div>
-                )}
+    if (enteredOtp !== generatedOtp) return toast.error("Invalid OTP!");
 
-                <div className='flex justify-center mb-3'>
-                    <button
-                        onClick={signup}
-                        className='bg-yellow-500 w-full text-black font-bold px-2 py-2 rounded-lg hover:bg-yellow-600 transition-colors'>
-                        Signup
-                    </button>
-                </div>
+    try {
+      setLoading(true);
 
-                <div>
-                    <h2 className='text-white'>Have an account? <Link className='text-yellow-500 font-bold' to={'/login'}>Login</Link></h2>
-                </div>
-            </div>
-        </div>
-    );
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Create final user object
+      const userObj = {
+        name,
+        email,
+        phone,
+        uid: res.user.uid,
+        userType,
+        location: {
+          lat: location.lat,
+          lng: location.lng,
+          address: location.address,
+        },
+        time: Timestamp.now(),
+        date: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }),
+
+        // PERSONALISATION FIELDS (yours)
+        lastSearch: "",
+        lastCategory: "",
+        lastUpdated: Timestamp.now(),
+      };
+
+      await setDoc(doc(fireDB, "users", res.user.uid), userObj);
+
+      toast.success("Signed up successfully!");
+
+      navigate("/login");
+    } catch (err) {
+      console.log(err);
+
+      let msg = "Signup failed";
+
+      if (err.code === "auth/email-already-in-use")
+        msg = "Email already registered";
+      else if (err.code === "auth/invalid-email") msg = "Invalid email";
+      else if (err.code === "auth/weak-password")
+        msg = "Password must be at least 6 characters";
+
+      toast.error(msg);
+    }
+
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex justify-center items-center min-h-screen py-8">
+      {loading && <Loader />}
+
+      <div className="bg-gray-800 px-10 py-10 rounded-xl w-full max-w-md mx-4">
+        <h1 className="text-center text-white text-xl mb-4 font-bold">
+          Signup
+        </h1>
+
+        {/* NAME */}
+        <input
+          className="bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        {/* EMAIL */}
+        <input
+          className="bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        {/* PHONE */}
+        <input
+          className="bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none"
+          placeholder="Phone Number"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+        />
+
+        {/* PASSWORD */}
+        <input
+          type="password"
+          className="bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white outline-none"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        {/* USER TYPE SELECT */}
+        <label className="text-gray-300 text-sm mb-1 block">
+          Account Type
+        </label>
+        <select
+          className="bg-gray-600 mb-4 px-2 py-2 w-full rounded-lg text-white"
+          value={userType}
+          onChange={(e) => setUserType(e.target.value)}
+        >
+          <option value="customer">Customer</option>
+          <option value="wholesaler">Wholesaler</option>
+          <option value="retailer">Retailer</option>
+        </select>
+
+        {userType === "wholesaler" && (
+          <p className="text-yellow-400 text-xs mb-2">
+            As a wholesaler, you can list products for retailers.
+          </p>
+        )}
+
+        {userType === "retailer" && (
+          <p className="text-blue-400 text-xs mb-2">
+            As a retailer, you can manage store & inventory.
+          </p>
+        )}
+
+        {/* LOCATION SELECT */}
+        <button
+          onClick={() => setShowLocationPicker(!showLocationPicker)}
+          className="bg-gray-600 w-full px-2 py-2 rounded-lg text-white"
+        >
+          {location ? "📍 Location Selected" : "📍 Select Your Location"}
+        </button>
+
+        {location && (
+          <p className="text-green-400 text-sm mt-2">✓ {location.address}</p>
+        )}
+
+        {showLocationPicker && (
+          <div className="bg-white p-4 rounded-lg mt-3">
+            <LocationPicker onLocationSelect={handleLocationSelect} />
+          </div>
+        )}
+
+        {/* OTP BUTTON */}
+        <button
+          onClick={sendOTP}
+          disabled={otpSent}
+          className={`bg-blue-500 text-white mt-4 font-bold px-3 py-2 rounded-lg w-full ${
+            otpSent ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          Send OTP
+        </button>
+
+        {/* OTP INPUT */}
+        {otpSent && (
+          <input
+            className="bg-gray-600 mt-4 px-2 py-2 w-full rounded-lg text-white outline-none"
+            placeholder="Enter OTP"
+            value={enteredOtp}
+            onChange={(e) => setEnteredOtp(e.target.value)}
+          />
+        )}
+
+        {/* SIGNUP BUTTON */}
+        <button
+          onClick={signup}
+          className="bg-yellow-500 mt-5 w-full text-black font-bold px-2 py-2 rounded-lg"
+        >
+          Signup
+        </button>
+
+        <p className="text-white text-center mt-4">
+          Have an account?{" "}
+          <Link className="text-yellow-500 font-bold" to="/login">
+            Login
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default Signup;
