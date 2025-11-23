@@ -1,7 +1,7 @@
 import { Dialog, DialogPanel, Transition, TransitionChild } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 
-export default function Modal({ name, address, pincode, phoneNumber, setName, setAddress, setPincode, setPhoneNumber, buyNow, buyNowCOD }) {
+export default function Modal({ cartItems, name, address, pincode, phoneNumber, setName, setAddress, setPincode, setPhoneNumber, buyNow, buyNowCOD }) {
     let [isOpen, setIsOpen] = useState(false)
 
     function closeModal() {
@@ -11,6 +11,8 @@ export default function Modal({ name, address, pincode, phoneNumber, setName, se
     function openModal() {
         setIsOpen(true)
     }
+
+    const disabled = cartItems.length === 0;
     return (
         <>
             <div className="  text-center rounded-lg text-white font-bold">
@@ -80,19 +82,23 @@ export default function Modal({ name, address, pincode, phoneNumber, setName, se
                                                     </form>
                                                     <div className="space-y-3">
 
-                                                        {/* Online Payment */}
                                                         <button
-                                                            onClick={() => { buyNow(); closeModal(); }}
-                                                            type="button"
-                                                            className="w-full text-white bg-violet-600 hover:bg-violet-800 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                            disabled={disabled}
+                                                            onClick={!disabled ? buyNow : null}
+                                                            className={`w-full py-2 rounded-lg font-semibold 
+                                                                ${disabled ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 text-white"}
+                                                            `}
+                                                            >
                                                             Pay Online
                                                         </button>
 
-                                                        {/* Cash on Delivery */}
                                                         <button
-                                                            onClick={() => { buyNowCOD(); closeModal(); }}
-                                                            type="button"
-                                                            className="w-full text-white bg-green-600 hover:bg-green-800 font-medium rounded-lg text-sm px-5 py-2.5">
+                                                            disabled={disabled}
+                                                            onClick={!disabled ? buyNowCOD : null}
+                                                            className={`w-full py-2 rounded-lg font-semibold 
+                                                                ${disabled ? "bg-gray-400 cursor-not-allowed" : "bg-green-600 text-white"}
+                                                            `}
+                                                            >
                                                             Cash on Delivery
                                                         </button>
 

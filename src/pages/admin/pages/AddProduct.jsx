@@ -1,6 +1,7 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import myContext from '../../../context/data/myContext'
 import { MdEditLocationAlt } from "react-icons/md";
+import LocationPicker from '../../../components/location/LocationPicker';
 
 function AddProduct() {
     const context = useContext(myContext);
@@ -46,8 +47,8 @@ function AddProduct() {
                             onChange={(e) => setProducts({ ...products, title: e.target.value })}
                             value={products.title}
                             name='title'
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Product title'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Product Title'
                         />
                     </div>
 
@@ -58,8 +59,8 @@ function AddProduct() {
                             name='price'
                             onChange={(e) => setProducts({ ...products, price: e.target.value })}
                             value={products.price}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Product price'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Product Price'
                         />
                     </div>
 
@@ -70,8 +71,8 @@ function AddProduct() {
                             name='quantity'
                             onChange={(e) => setProducts({ ...products, quantity: e.target.value })}
                             value={products.quantity}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Available stock quantity'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Available Quantity'
                             min="0"
                         />
                     </div>
@@ -83,8 +84,8 @@ function AddProduct() {
                             name='moq'
                             onChange={(e) => setProducts({ ...products, moq: e.target.value })}
                             value={products.moq}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Minimum order quantity (optional)'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Minimum Order Quantity (optional)'
                             min="1"
                         />
                     </div>
@@ -96,8 +97,8 @@ function AddProduct() {
                             name='imageurl'
                             onChange={(e) => setProducts({ ...products, imageUrl: e.target.value })}
                             value={products.imageUrl}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Product imageUrl'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Product Image URL'
                         />
                     </div>
 
@@ -108,8 +109,8 @@ function AddProduct() {
                             name='category'
                             onChange={(e) => setProducts({ ...products, category: e.target.value })}
                             value={products.category}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
-                            placeholder='Product category'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            placeholder='Product Category'
                         />
                     </div>
 
@@ -121,7 +122,7 @@ function AddProduct() {
                             name='description'
                             onChange={(e) => setProducts({ ...products, description: e.target.value })}
                             value={products.description}
-                            className='bg-gray-600 mb-4 px-2 py-2 w-full lg:w-[20em] rounded-lg text-white placeholder:text-gray-200 outline-none'
+                            className='bg-gray-600 mb-4 px-2 py-2 w-full max-w-lg mx-auto rounded-lg text-white placeholder:text-gray-200 outline-none'
                             placeholder='Product Description'
                         />
                     </div>
@@ -131,7 +132,7 @@ function AddProduct() {
                         <button
                             type="button"
                             onClick={() => setShowLocationPicker(!showLocationPicker)}
-                            className='bg-gray-600 w-full px-2 py-2 rounded-lg text-white hover:bg-gray-700 transition-colors'
+                            className='bg-gray-600 w-full max-w-lg mx-auto px-2 py-2 rounded-lg text-white hover:bg-gray-700 transition-colors'
                         >
                             {location ? (
                                 <span className="flex items-center gap-2">
@@ -161,7 +162,7 @@ function AddProduct() {
                     <div className='flex justify-center mb-3'>
                         <button
                             onClick={handleAddProduct}
-                            className='bg-yellow-500 w-full text-black font-bold px-2 py-2 rounded-lg'
+                            className='bg-yellow-500 w-full max-w-lg mx-auto text-black font-bold px-2 py-2 rounded-lg'
                         >
                             Add Product
                         </button>

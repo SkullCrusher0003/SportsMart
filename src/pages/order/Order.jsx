@@ -1,13 +1,84 @@
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import myContext from '../../context/data/myContext'
 import Layout from '../../components/layout/Layout'
 import Loader from '../../components/loader/Loader'
+import { collection, addDoc, getDocs, query } from "firebase/firestore";
+import { fireDB, auth } from "../../firebase/FirebaseConfig";
+import { toast } from "react-toastify";
 
 function Order() {
   const userData = JSON.parse(localStorage.getItem("user"));
   const userid = userData?.uid || userData?.user?.uid;
   const context = useContext(myContext)
   const { mode, loading, order } = context
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  // Review Modal
+  const openReviewModal = async (product) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      toast.error("You must be logged in to review");
+      return;
+    }
+
+    // Check if user already reviewed
+    const reviewsRef = collection(fireDB, "products", product.id, "reviews");
+    const q = query(reviewsRef);
+    const snapshot = await getDocs(q);
+
+    const alreadyReviewed = snapshot.docs.some(
+      (doc) => doc.data().userId === userId
+    );
+
+    if (alreadyReviewed) {
+      toast.info("You already reviewed this product.");
+      return;
+    }
+
+    setSelectedProduct(product);
+    setShowModal(true);
+  };
+
+  // Review Function
+  const submitReview = async () => {
+    if (!auth.currentUser) {
+      toast.error("Please log in to submit a review!");
+      return;
+    }
+    // Prevent duplicate reviews (double protection)
+    const reviewsRef = collection(fireDB, "products", selectedProduct.id, "reviews");
+    const snap = await getDocs(reviewsRef);
+    if (snap.docs.some((doc) => doc.data().userId === auth.currentUser.uid)) {
+      toast.info("You already reviewed this product.");
+      return;
+    }
+
+    if (rating === 0) {
+      toast.warning("Please Select a Rating.");
+      return;
+    }
+
+    try {
+      await addDoc(collection(fireDB, "products", selectedProduct.id, "reviews"), {
+        userId: auth.currentUser.uid,
+        username: auth.currentUser.displayName || "User",
+        rating,
+        comment,
+        createdAt: new Date(),
+      });
+
+      toast.success("Review submitted!");
+      setShowModal(false);
+      setRating(0);
+      setComment("");
+    } catch (err) {
+      toast.error("Failed to submit review");
+      console.log(err);
+    }
+  };
+
   return (
     <Layout>
       {loading && <Loader />}
@@ -22,13 +93,92 @@ function Order() {
                       order.cartItems.map((item) => {
                         return (
                           <div className="rounded-lg md:w-2/3">
-                            <div className="justify-between mb-6 rounded-lg bg-white p-6 shadow-md sm:flex sm:justify-start" style={{ backgroundColor: mode === 'dark' ? '#282c34' : '', color: mode === 'dark' ? 'white' : '', }}>
-                              <img src={item.imageUrl} alt="product-image" className="w-full rounded-lg sm:w-40" />
-                              <div className="sm:ml-4 sm:flex sm:w-full sm:justify-between">
+                            <div
+                              className="justify-between mb-6 rounded-lg bg-white p-6 shadow-md sm:flex sm:justify-start"
+                              style={{
+                                backgroundColor: mode === "dark" ? "#282c34" : "",
+                                color: mode === "dark" ? "white" : "",
+                              }}
+                            >
+                              <img
+                                src={item.imageUrl}
+                                alt="product-image"
+                                className="w-full rounded-lg sm:w-40"
+                              />
+
+                              <div className="sm:ml-4 sm:flex sm:w-full sm:flex-col">
+
+                                {/* PRODUCT INFO */}
                                 <div className="mt-5 sm:mt-0">
-                                  <h2 className="text-lg font-bold text-gray-900" style={{ color: mode === 'dark' ? 'white' : '' }}>{item.title}</h2>
-                                  <p className="mt-1 text-xs text-gray-700" style={{ color: mode === 'dark' ? 'white' : '' }}>{item.description}</p>
-                                  <p className="mt-1 text-xs text-gray-700" style={{ color: mode === 'dark' ? 'white' : '' }}>{item.price}</p>
+
+                                  {/* TITLE */}
+                                  <h2
+                                    className="text-lg font-bold"
+                                    style={{ color: mode === "dark" ? "white" : "" }}
+                                  >
+                                    {item.title}
+                                  </h2>
+
+                                  {/* PRICE — moved above description */}
+                                  <p
+                                    className="text-lg mt-1"
+                                    style={{ color: mode === "dark" ? "white" : "" }}
+                                  >
+                                    ₹{item.price}
+                                  </p>
+
+                                  {/* DESCRIPTION — now below price */}
+                                  <p
+                                    className="mt-1 text-sm opacity-80"
+                                    style={{ color: mode === "dark" ? "white" : "" }}
+                                  >
+                                    {item.description}
+                                  </p>
+                                </div>
+
+                                {/* STATUS + PROGRESS BAR */}
+                                <div className="mt-6">
+
+                                  {/* STATUS TEXT */}
+                                  <p
+                                    className="text-lg font-medium mb-2"
+                                    style={{ color: mode === "dark" ? "white" : "" }}
+                                  >
+                                    Status: {order.orderStatus}
+                                  </p>
+
+                                  {/* PROGRESS BAR */}
+                                  {(() => {
+                                    const ORDER_FLOW = [
+                                      "Placed",
+                                      "Dispatched",
+                                      "In Transit",
+                                      "Out for Delivery",
+                                      "Delivered",
+                                    ];
+
+                                    const currentIndex = ORDER_FLOW.indexOf(order.orderStatus);
+                                    const progressPercent = ((currentIndex + 1) / ORDER_FLOW.length) * 100;
+
+                                    return (
+                                      <div className="w-full h-2 bg-gray-300 rounded-full">
+                                        <div
+                                          className="h-full bg-green-500 rounded-full transition-all duration-500"
+                                          style={{ width: `${progressPercent}%` }}
+                                        ></div>
+                                      </div>
+                                    );
+                                  })()}
+
+                                  {/* REVIEW BUTTON - Only if delivered */}
+                                  {order.orderStatus === "Delivered" && (
+                                    <button
+                                      onClick={() => openReviewModal(item)}  
+                                      className="mt-4 bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+                                    >
+                                      Review Product
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -48,6 +198,91 @@ function Order() {
         )
 
       }
+    
+    {showModal && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          className="w-full max-w-lg p-8 rounded-2xl shadow-xl"
+          style={{
+            backgroundColor: mode === "dark" ? "#1f2937" : "white",
+            color: mode === "dark" ? "white" : "black",
+          }}
+        >
+          {/* Title */}
+          <h2 className="text-2xl font-semibold mb-6">
+            Review Product
+          </h2>
+          <div
+            style={{
+              height: "6px",
+              width: "100px",
+              borderRadius: "9999px",
+              background: "#d6336c", // Same pink as your sample
+              marginBottom: "24px"
+            }}
+          ></div>
+
+          {/* Product Name */}
+          <p className="text-lg font-medium mb-4 opacity-80">
+            {selectedProduct?.title}
+          </p>
+
+          {/* Rating Stars */}
+          <label className="block mb-2 font-medium">Rating</label>
+          <div className="flex mb-5 text-3xl">
+            {[1, 2, 3, 4, 5].map((num) => (
+              <span
+                key={num}
+                onClick={() => setRating(num)}
+                className={`cursor-pointer transition ${
+                  rating >= num ? "text-yellow-400" : "text-gray-400"
+                }`}
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          {/* Comment Box */}
+          <label className="block mb-2 font-medium">Feedback</label>
+          <textarea
+            rows="4"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="w-full p-3 border rounded-lg mb-6 focus:outline-none"
+            style={{
+              backgroundColor: mode === "dark" ? "#111827" : "#f9fafb",
+              borderColor: mode === "dark" ? "#374151" : "#d1d5db",
+              color: mode === "dark" ? "white" : "black",
+            }}
+            placeholder="Write your experience..."
+          ></textarea>
+
+          {/* Action buttons */}
+          <div className="flex justify-end gap-4">
+            <button
+              className="px-5 py-2 rounded-lg font-medium"
+              style={{
+                backgroundColor: mode === "dark" ? "#374151" : "#e5e7eb",
+                color: mode === "dark" ? "white" : "black",
+              }}
+              onClick={() => setShowModal(false)}
+            >
+              Cancel
+            </button>
+
+            <button
+              className="px-5 py-2 rounded-lg font-medium text-white"
+              style={{ backgroundColor: "#6366f1" }} // purple-500
+              onClick={submitReview}
+            >
+              Submit Review
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     </Layout>
   )
 }

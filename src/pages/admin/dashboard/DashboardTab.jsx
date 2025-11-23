@@ -299,7 +299,9 @@ function DashboardTab() {
                                             </th>
                                         </tr>
                                     </thead>
-                                    {user.map((item, index) => {
+                                    {user
+                                        .filter(item => item.userType === "customer")
+                                        .map((item, index) => {
                                         const {name,uid,email,date} = item;
                                         return (
                                             <tbody>

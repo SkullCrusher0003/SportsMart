@@ -261,7 +261,9 @@ function WholesalerTab() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {user.map((item, index) => {
+                                        {user
+                                            .filter(item => item.userType === "retailer")
+                                            .map((item, index) => {
                                             const { name, uid, email, date, location } = item;
                                             return (
                                                 <tr key={index} className="bg-gray-50 border-b dark:border-gray-700" 

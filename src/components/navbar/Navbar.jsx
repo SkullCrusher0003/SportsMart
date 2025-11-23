@@ -30,6 +30,7 @@ export default function Navbar() {
   const user = getStorageItem("user");
   const admin = getStorageItem("admin");
   const wholesaler = getStorageItem("wholesaler");
+  const userType = JSON.parse(localStorage.getItem("user"))?.userType || "customer";
 
   const loggedEmail =
     admin?.email ||
@@ -40,12 +41,12 @@ export default function Navbar() {
     user?.user?.email;
 
   // Role-based dashboard logic (from teammates’ version)
-  const dashboardLink =
-    loggedEmail === "testretailer@gmail.com"
-      ? "/dashboard"
-      : loggedEmail === "arnavgupta5107@gmail.com"
-      ? "/wholesaler-dashboard"
-      : null;
+  let dashboardLink = null;
+  if (userType === "retailer") {
+    dashboardLink = "/dashboard";
+  } else if (userType === "wholesaler") {
+    dashboardLink = "/wholesaler-dashboard";
+  }
 
   const logout = () => {
     localStorage.removeItem("currentUser");
@@ -214,10 +215,12 @@ export default function Navbar() {
               </button>
 
               {/* CART */}
+              {userType !== "wholesaler" && (
               <Link to="/cart" className="flex items-center gap-2">
                 <FaCartShopping size={22} />
                 <span>{cartItems.length}</span>
               </Link>
+              )}
             </div>
           </div>
         </nav>

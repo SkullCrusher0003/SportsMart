@@ -34,7 +34,6 @@ function Home() {
         </Link>
       </div>
       <Track />
-      <Testimonial />
 
     </Layout>
   )

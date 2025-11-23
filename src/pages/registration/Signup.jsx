@@ -10,6 +10,7 @@ import { Timestamp, setDoc, doc } from "firebase/firestore";
 import Loader from "../../components/loader/Loader";
 import LocationPicker from "../../components/location/LocationPicker";
 import emailjs from "@emailjs/browser";
+import { MdEditLocationAlt } from "react-icons/md";
 
 function Signup() {
   // BASIC FIELDS
@@ -203,10 +204,12 @@ function Signup() {
 
         {/* LOCATION SELECT */}
         <button
+          type="button"
           onClick={() => setShowLocationPicker(!showLocationPicker)}
-          className="bg-gray-600 w-full px-2 py-2 rounded-lg text-white"
+          className='bg-gray-600 w-full px-2 py-2 rounded-lg text-white hover:bg-gray-700'
         >
-          {location ? "📍 Location Selected" : "📍 Select Your Location"}
+          <MdEditLocationAlt className="inline mr-2 text-xl" />
+          {location ? "Location Selected" : "Select Your Location"}
         </button>
 
         {location && (
