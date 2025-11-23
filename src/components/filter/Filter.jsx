@@ -11,7 +11,7 @@ function Filter() {
     for (let p = 500; p <= maxPrice + 250; p += 500) {
         priceBuckets.push(p);
     }
-    const uniqueCategories = [...new Set(product.map(item => item.category))];
+    const uniqueCategories = [...new Set(product.map(item => item.category.trim()))];
 
     return (
         <div className=' container mx-auto px-4 mt-5 '>
@@ -34,7 +34,7 @@ function Filter() {
                             if (e.target.value.trim() !== "") {
                                 saveUserPreferences({
                                     lastSearch: e.target.value,
-                                    lastCategory: ""
+                                    lastCategory: filterType
                                 });
                             }
                         }}
@@ -60,7 +60,7 @@ function Filter() {
 
                                 if (e.target.value.trim() !== "") {
                                     saveUserPreferences({
-                                        lastSearch: "",
+                                        lastSearch: searchkey,
                                         lastCategory: e.target.value
                                     });
                                 }

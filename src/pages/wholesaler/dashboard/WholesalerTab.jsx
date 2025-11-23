@@ -166,7 +166,7 @@ function WholesalerTab() {
                                 <h1 className='text-center mb-5 text-3xl font-semibold underline' style={{ color: mode === 'dark' ? 'white' : '' }}>
                                     Wholesale Order Details
                                 </h1>
-                                {order.map((allorder, index) => {
+                                {order.filter(order => order.userType === "retailer").map((allorder, index) => {
                                     return (
                                         <table key={index} className="w-full text-sm text-left text-gray-500 dark:text-gray-400 mb-8">
                                             <thead className="text-xs text-black uppercase bg-gray-200" 

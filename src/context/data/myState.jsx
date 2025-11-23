@@ -1,23 +1,31 @@
-import React, { useEffect, useState } from 'react'
-import MyContext from './myContext';
-import { fireDB } from '../../firebase/FirebaseConfig';
+import React, { useEffect, useState } from "react";
+import MyContext from "./myContext";
+import { fireDB } from "../../firebase/FirebaseConfig";
 import {
-  Timestamp, addDoc, collection, deleteDoc, doc, getDocs, getDoc,
-  onSnapshot, orderBy, query, setDoc, updateDoc
-} from 'firebase/firestore';
-import { toast } from 'react-toastify';
+  Timestamp,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  getDoc,
+  onSnapshot,
+  orderBy,
+  query,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { toast } from "react-toastify";
 
 function MyState(props) {
-
   /* -------------------------- THEME MODE -------------------------- */
-  const [mode, setMode] = useState('light');
+  const [mode, setMode] = useState("light");
   const toggleMode = () => {
-    const newMode = mode === 'light' ? 'dark' : 'light';
+    const newMode = mode === "light" ? "dark" : "light";
     setMode(newMode);
-    document.body.style.backgroundColor = newMode === 'dark'
-      ? 'rgb(17, 24, 39)'
-      : 'white';
-  }
+    document.body.style.backgroundColor =
+      newMode === "dark" ? "rgb(17, 24, 39)" : "white";
+  };
 
   const [loading, setLoading] = useState(false);
 
@@ -40,19 +48,23 @@ function MyState(props) {
 
   /* ------------------------- ADD PRODUCT -------------------------- */
   const addProduct = async () => {
-    if (!products.title || !products.price || !products.imageUrl || !products.category || !products.description) {
+    if (
+      !products.title ||
+      !products.price ||
+      !products.imageUrl ||
+      !products.category ||
+      !products.description
+    ) {
       return toast.error("Please fill all fields");
     }
 
-    const productRef = collection(fireDB, "products");
-
     try {
       setLoading(true);
-      await addDoc(productRef, products);
+      await addDoc(collection(fireDB, "products"), products);
       toast.success("Product Added Successfully");
 
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const email = user?.user?.email;
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      const email = stored?.user?.email;
 
       setTimeout(() => {
         if (email === "arnavgupta5107@gmail.com") {
@@ -69,6 +81,7 @@ function MyState(props) {
     }
 
     setLoading(false);
+
     setProducts({
       title: "",
       price: "",
@@ -82,7 +95,7 @@ function MyState(props) {
         month: "short",
         day: "2-digit",
         year: "numeric",
-      })
+      }),
     });
   };
 
@@ -115,8 +128,8 @@ function MyState(props) {
       await setDoc(doc(fireDB, "products", products.id), products);
       toast.success("Product Updated Successfully");
 
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const email = user?.user?.email;
+      const stored = JSON.parse(localStorage.getItem("user") || "{}");
+      const email = stored?.user?.email;
 
       if (email === "arnavgupta5107@gmail.com") {
         window.location.href = "/wholesaler-dashboard";
@@ -150,7 +163,7 @@ function MyState(props) {
       setLoading(true);
       const result = await getDocs(collection(fireDB, "orders"));
       const arr = [];
-      result.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+      result.forEach((doc) => arr.push({ id: doc.id, ...doc.data() }));
       setOrder(arr);
     } catch (error) {
       console.log(error);
@@ -160,7 +173,9 @@ function MyState(props) {
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      await updateDoc(doc(fireDB, "orders", orderId), { orderStatus: newStatus });
+      await updateDoc(doc(fireDB, "orders", orderId), {
+        orderStatus: newStatus,
+      });
       toast.success("Order Status Updated!");
       getOrderData();
     } catch {
@@ -176,7 +191,7 @@ function MyState(props) {
       setLoading(true);
       const result = await getDocs(collection(fireDB, "users"));
       const arr = [];
-      result.forEach(doc => arr.push(doc.data()));
+      result.forEach((doc) => arr.push(doc.data()));
       setUser(arr);
     } catch (error) {
       console.log(error);
@@ -185,40 +200,51 @@ function MyState(props) {
   };
 
   /* -------------------------- PERSONALISATION -------------------------- */
-  const [userPreferences, setUserPreferences] = useState({
-    lastSearch: "",
-    lastCategory: ""
+
+  // Load from localStorage instantly (prevents lag)
+  const [userPreferences, setUserPreferences] = useState(() => {
+    return (
+      JSON.parse(localStorage.getItem("userPreferences")) || {
+        lastSearch: "",
+        lastCategory: "",
+      }
+    );
   });
 
-  const saveUserPreferences = async ({ lastSearch, lastCategory } = {}) => {
+  const saveUserPreferences = async (data = {}) => {
     try {
       const raw = localStorage.getItem("user");
       if (!raw) return;
 
-      const u = JSON.parse(raw).user;
-      if (!u?.uid) return;
-
-      const ref = doc(fireDB, "users", u.uid);
+      const stored = JSON.parse(raw);
+      const uid =
+        stored?.uid || stored?.user?.uid || stored?.user?.user?.uid; // support all formats
+      if (!uid) return;
 
       const current = userPreferences;
 
+      // merge
       const updated = {
-        lastSearch: lastSearch?.trim() || current.lastSearch,
-        lastCategory: lastCategory?.trim() || current.lastCategory,
+        lastSearch: data.lastSearch?.trim() ?? current.lastSearch,
+        lastCategory: data.lastCategory?.trim() ?? current.lastCategory,
       };
 
+      // prevent useless writes
       if (
         updated.lastSearch === current.lastSearch &&
         updated.lastCategory === current.lastCategory
-      ) return;
+      )
+        return;
 
-      await updateDoc(ref, {
+      // update firebase
+      await updateDoc(doc(fireDB, "users", uid), {
         ...updated,
         lastUpdated: Timestamp.now(),
       });
 
+      // update local state + localStorage
       setUserPreferences(updated);
-
+      localStorage.setItem("userPreferences", JSON.stringify(updated));
     } catch (err) {
       console.error("personalisation error:", err);
     }
@@ -228,16 +254,21 @@ function MyState(props) {
     try {
       const raw = localStorage.getItem("user");
       if (!raw) return;
-      const u = JSON.parse(raw).user;
-      if (!u?.uid) return;
 
-      const snap = await getDoc(doc(fireDB, "users", u.uid));
+      const stored = JSON.parse(raw);
+      const uid =
+        stored?.uid || stored?.user?.uid || stored?.user?.user?.uid;
+      if (!uid) return;
+
+      const snap = await getDoc(doc(fireDB, "users", uid));
       if (snap.exists()) {
         const data = snap.data();
-        setUserPreferences({
+        const prefs = {
           lastSearch: data.lastSearch || "",
           lastCategory: data.lastCategory || "",
-        });
+        };
+        setUserPreferences(prefs);
+        localStorage.setItem("userPreferences", JSON.stringify(prefs));
       }
     } catch (err) {
       console.error(err);
@@ -245,9 +276,9 @@ function MyState(props) {
   };
 
   /* ------------------------------ FILTERS ------------------------------- */
-  const [searchkey, setSearchkey] = useState('');
-  const [filterType, setFilterType] = useState('');
-  const [filterPrice, setFilterPrice] = useState('');
+  const [searchkey, setSearchkey] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [filterPrice, setFilterPrice] = useState("");
 
   /* ------------------------------ INIT ------------------------------- */
   useEffect(() => {
@@ -258,22 +289,40 @@ function MyState(props) {
   }, []);
 
   return (
-    <MyContext.Provider value={{
-      mode, toggleMode,
-      loading, setLoading,
-      products, setProducts, addProduct, product,
-      updateProduct, edithandle, deleteProduct,
-      order, user, updateOrderStatus,
+    <MyContext.Provider
+      value={{
+        mode,
+        toggleMode,
+        loading,
+        setLoading,
 
-      searchkey, setSearchkey,
-      filterType, setFilterType,
-      filterPrice, setFilterPrice,
+        products,
+        setProducts,
+        addProduct,
+        product,
+        updateProduct,
+        edithandle,
+        deleteProduct,
 
-      userPreferences, saveUserPreferences, loadUserPreferences,
-    }}>
+        order,
+        user,
+        updateOrderStatus,
+
+        searchkey,
+        setSearchkey,
+        filterType,
+        setFilterType,
+        filterPrice,
+        setFilterPrice,
+
+        userPreferences,
+        saveUserPreferences,
+        loadUserPreferences,
+      }}
+    >
       {props.children}
     </MyContext.Provider>
-  )
+  );
 }
 
 export default MyState;

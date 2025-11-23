@@ -171,6 +171,7 @@ function Cart() {
           email: finalEmail,
           userid: finalUID,
           paymentId,
+          userType: storedUser?.userType || "customer",
           orderStatus: "Placed"
         }
 
@@ -270,6 +271,7 @@ function Cart() {
       email: finalEmail,
       userid: finalUID,
       paymentId: "COD",
+      userType: storedUser?.userType || "customer",
       orderStatus: "Placed"
     };
     

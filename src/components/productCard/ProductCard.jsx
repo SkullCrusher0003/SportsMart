@@ -50,12 +50,11 @@ function ProductCard() {
                 </div>
 
                 {/* Product Grid */}
-                <div className="flex flex-wrap justify-center md:justify-start gap-6">
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {personalisedList.slice(0, 4).map(item => (
                         <div
                             key={item.id}
-                            className="p-4 md:w-1/4 cursor-pointer drop-shadow-lg"
+                            className="p-4 cursor-pointer drop-shadow-lg"
                             onClick={() => window.location.href = `/productinfo/${item.id}`}
                         >
 

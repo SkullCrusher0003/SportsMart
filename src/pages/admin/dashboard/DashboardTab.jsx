@@ -203,7 +203,7 @@ function DashboardTab() {
                                     </thead>
 
                                     <tbody>
-                                        {order.map((allorder, orderIndex) =>
+                                        {order.filter(order => order.userType === "customer").map((allorder, orderIndex) =>
                                             allorder.cartItems.map((item, itemIndex) => {
                                                 const { title, category, imageUrl, price } = item;
 
