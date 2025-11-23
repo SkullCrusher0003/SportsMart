@@ -15,7 +15,7 @@ function Order() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
-  // Review Modal
+
   const openReviewModal = async (product) => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
@@ -23,7 +23,6 @@ function Order() {
       return;
     }
 
-    // Check if user already reviewed
     const reviewsRef = collection(fireDB, "products", product.id, "reviews");
     const q = query(reviewsRef);
     const snapshot = await getDocs(q);
@@ -41,13 +40,12 @@ function Order() {
     setShowModal(true);
   };
 
-  // Review Function
   const submitReview = async () => {
     if (!auth.currentUser) {
       toast.error("Please log in to submit a review!");
       return;
     }
-    // Prevent duplicate reviews (double protection)
+
     const reviewsRef = collection(fireDB, "products", selectedProduct.id, "reviews");
     const snap = await getDocs(reviewsRef);
     if (snap.docs.some((doc) => doc.data().userId === auth.currentUser.uid)) {
@@ -103,15 +101,12 @@ function Order() {
                               <img
                                 src={item.imageUrl}
                                 alt="product-image"
-                                className="w-full rounded-lg sm:w-40"
+                                className="rounded-lg sm:w-40 h-40 object-contain"
                               />
 
                               <div className="sm:ml-4 sm:flex sm:w-full sm:flex-col">
 
-                                {/* PRODUCT INFO */}
                                 <div className="mt-5 sm:mt-0">
-
-                                  {/* TITLE */}
                                   <h2
                                     className="text-lg font-bold"
                                     style={{ color: mode === "dark" ? "white" : "" }}
@@ -119,7 +114,6 @@ function Order() {
                                     {item.title}
                                   </h2>
 
-                                  {/* PRICE — moved above description */}
                                   <p
                                     className="text-lg mt-1"
                                     style={{ color: mode === "dark" ? "white" : "" }}
@@ -127,7 +121,6 @@ function Order() {
                                     ₹{item.price}
                                   </p>
 
-                                  {/* DESCRIPTION — now below price */}
                                   <p
                                     className="mt-1 text-sm opacity-80"
                                     style={{ color: mode === "dark" ? "white" : "" }}
@@ -136,10 +129,7 @@ function Order() {
                                   </p>
                                 </div>
 
-                                {/* STATUS + PROGRESS BAR */}
                                 <div className="mt-6">
-
-                                  {/* STATUS TEXT */}
                                   <p
                                     className="text-lg font-medium mb-2"
                                     style={{ color: mode === "dark" ? "white" : "" }}
@@ -147,7 +137,6 @@ function Order() {
                                     Status: {order.orderStatus}
                                   </p>
 
-                                  {/* PROGRESS BAR */}
                                   {(() => {
                                     const ORDER_FLOW = [
                                       "Placed",
@@ -170,10 +159,9 @@ function Order() {
                                     );
                                   })()}
 
-                                  {/* REVIEW BUTTON - Only if delivered */}
                                   {order.orderStatus === "Delivered" && (
                                     <button
-                                      onClick={() => openReviewModal(item)}  
+                                      onClick={() => openReviewModal(item)}
                                       className="mt-4 bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
                                     >
                                       Review Product
@@ -196,92 +184,85 @@ function Order() {
         (
           <h2 className=' text-center tex-2xl text-white'>Not Order</h2>
         )
-
       }
-    
-    {showModal && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div
-          className="w-full max-w-lg p-8 rounded-2xl shadow-xl"
-          style={{
-            backgroundColor: mode === "dark" ? "#1f2937" : "white",
-            color: mode === "dark" ? "white" : "black",
-          }}
-        >
-          {/* Title */}
-          <h2 className="text-2xl font-semibold mb-6">
-            Review Product
-          </h2>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div
+            className="w-full max-w-lg p-8 rounded-2xl shadow-xl"
             style={{
-              height: "6px",
-              width: "100px",
-              borderRadius: "9999px",
-              background: "#d6336c", // Same pink as your sample
-              marginBottom: "24px"
-            }}
-          ></div>
-
-          {/* Product Name */}
-          <p className="text-lg font-medium mb-4 opacity-80">
-            {selectedProduct?.title}
-          </p>
-
-          {/* Rating Stars */}
-          <label className="block mb-2 font-medium">Rating</label>
-          <div className="flex mb-5 text-3xl">
-            {[1, 2, 3, 4, 5].map((num) => (
-              <span
-                key={num}
-                onClick={() => setRating(num)}
-                className={`cursor-pointer transition ${
-                  rating >= num ? "text-yellow-400" : "text-gray-400"
-                }`}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-
-          {/* Comment Box */}
-          <label className="block mb-2 font-medium">Feedback</label>
-          <textarea
-            rows="4"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="w-full p-3 border rounded-lg mb-6 focus:outline-none"
-            style={{
-              backgroundColor: mode === "dark" ? "#111827" : "#f9fafb",
-              borderColor: mode === "dark" ? "#374151" : "#d1d5db",
+              backgroundColor: mode === "dark" ? "#1f2937" : "white",
               color: mode === "dark" ? "white" : "black",
             }}
-            placeholder="Write your experience..."
-          ></textarea>
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              className="px-5 py-2 rounded-lg font-medium"
+          >
+            <h2 className="text-2xl font-semibold mb-6">
+              Review Product
+            </h2>
+            <div
               style={{
-                backgroundColor: mode === "dark" ? "#374151" : "#e5e7eb",
+                height: "6px",
+                width: "100px",
+                borderRadius: "9999px",
+                background: "#d6336c",
+                marginBottom: "24px"
+              }}
+            ></div>
+
+            <p className="text-lg font-medium mb-4 opacity-80">
+              {selectedProduct?.title}
+            </p>
+
+            <label className="block mb-2 font-medium">Rating</label>
+            <div className="flex mb-5 text-3xl">
+              {[1, 2, 3, 4, 5].map((num) => (
+                <span
+                  key={num}
+                  onClick={() => setRating(num)}
+                  className={`cursor-pointer transition ${rating >= num ? "text-yellow-400" : "text-gray-400"
+                    }`}
+                >
+                  ★
+                </span>
+              ))}
+            </div>
+
+            <label className="block mb-2 font-medium">Feedback</label>
+            <textarea
+              rows="4"
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full p-3 border rounded-lg mb-6 focus:outline-none"
+              style={{
+                backgroundColor: mode === "dark" ? "#111827" : "#f9fafb",
+                borderColor: mode === "dark" ? "#374151" : "#d1d5db",
                 color: mode === "dark" ? "white" : "black",
               }}
-              onClick={() => setShowModal(false)}
-            >
-              Cancel
-            </button>
+              placeholder="Write your experience..."
+            ></textarea>
 
-            <button
-              className="px-5 py-2 rounded-lg font-medium text-white"
-              style={{ backgroundColor: "#6366f1" }} // purple-500
-              onClick={submitReview}
-            >
-              Submit Review
-            </button>
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-5 py-2 rounded-lg font-medium"
+                style={{
+                  backgroundColor: mode === "dark" ? "#374151" : "#e5e7eb",
+                  color: mode === "dark" ? "white" : "black",
+                }}
+                onClick={() => setShowModal(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                className="px-5 py-2 rounded-lg font-medium text-white"
+                style={{ backgroundColor: "#6366f1" }}
+                onClick={submitReview}
+              >
+                Submit Review
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
     </Layout>
   )

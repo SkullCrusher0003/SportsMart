@@ -33,7 +33,7 @@ function ProductCard() {
     const addCart = (item, e) => {
         e.stopPropagation();
         dispatch(addToCart({ ...item, quantity: 1 }));
-        toast.success("Added to cart");
+        toast.success("Added 1 Item");
     };
 
     return (

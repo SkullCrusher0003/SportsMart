@@ -61,7 +61,7 @@ function ProductInfo() {
 
     const addCart = (products) => {
         dispatch(addToCart(products));
-        toast.success('Added to cart');
+        toast.success('Added 1 Item to Cart');
     };
 
     useEffect(() => {

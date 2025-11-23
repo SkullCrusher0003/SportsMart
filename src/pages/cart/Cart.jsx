@@ -42,10 +42,10 @@ function Cart() {
   }
   const grandTotal = shipping + totalAmount;
 
-  // add to cart
+  // Delete from cart
   const deleteCart = (item) => {
     dispatch(deleteFromCart(item))
-    toast.success('delete g cart');
+    toast.success('Deleted 1 Item From Cart');
   }
 
   useEffect(() => {
