@@ -2,8 +2,11 @@ import React from 'react'
 
 function HeroSection() {
   return (
-    <div>
-        <img src="https://static.vecteezy.com/system/resources/previews/004/299/835/original/online-shopping-on-phone-buy-sell-business-digital-web-banner-application-money-advertising-payment-ecommerce-illustration-search-free-vector.jpg" alt="" />
+    <div className="w-full h-[220px] sm:h-[280px] md:h-[320px] lg:h-[380px] overflow-hidden">
+      <img
+        src="../../../heroImage.png"
+        className="w-full h-full object-cover object-center"
+      />
     </div>
   )
 }
